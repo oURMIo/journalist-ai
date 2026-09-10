@@ -1,0 +1,78 @@
+plugins {
+  id 'java'
+  id 'org.springframework.boot' version '4.1.0'
+  id 'io.spring.dependency-management' version '1.1.7'
+  id 'jacoco'
+}
+
+group = 'com.dach'
+version = '0.0.1-SNAPSHOT'
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+}
+
+jacoco {
+  toolVersion = "0.8.13"
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  // --- Telegram ---
+  implementation("com.github.pengrad:java-telegram-bot-api:10.1.0")
+
+  // --- Spring ---
+  implementation 'org.springframework.boot:spring-boot-starter'
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation("org.springframework.boot:spring-boot-starter-logging")
+
+  // --- Persistence ---
+  implementation 'org.springframework.boot:spring-boot-flyway'
+  implementation 'org.flywaydb:flyway-core'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+  runtimeOnly 'org.postgresql:postgresql'
+
+  // --- Optional LLM summariser (SUMMARIZER=llm) ---
+  implementation("com.anthropic:anthropic-java:2.34.0")
+
+  // --- News / parsing ---
+  implementation("com.rometools:rome:2.1.0")
+  implementation("org.jsoup:jsoup:1.22.2")
+
+  // --- Misc ---
+  implementation("javax.inject:javax.inject:1")
+  implementation("com.fasterxml.jackson.core:jackson-databind:2.22.0")
+  implementation("com.google.code.gson:gson:2.14.0")
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.3'
+  implementation('org.apache.commons:commons-lang3:3.20.0')
+
+  // --- Tests ---
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.boot:spring-boot-data-jpa-test'
+  testImplementation 'io.zonky.test:embedded-postgres:2.1.0'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+  useJUnitPlatform()
+}
+
+test {
+  useJUnitPlatform()
+  finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+  reports {
+    xml.required = true
+    csv.required = true
+    html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+  }
+}

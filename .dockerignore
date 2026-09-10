@@ -1,0 +1,9 @@
+.gradle
+build
+out
+.idea
+logs
+*.iml
+*.zip
+.env
+src/main/resources/config.properties

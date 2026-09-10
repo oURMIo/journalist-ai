@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>"biotech" - Google News</title>
+    <link>https://news.google.com/search?q=biotech</link>
+    <item>
+      <title>Gene therapy trial reports positive results - BioWorld</title>
+      <link>https://news.google.com/rss/articles/CBMiT0FVX3lxTE5</link>
+      <guid isPermaLink="false">google-guid-1</guid>
+      <pubDate>Tue, 02 Sep 2025 09:00:00 GMT</pubDate>
+      <description>&lt;a href="https://bioworld.example/gene"&gt;Gene therapy trial&lt;/a&gt; reports positive results.</description>
+    </item>
+  </channel>
+</rss>

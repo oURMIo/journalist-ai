@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Sample Science Feed</title>
+  <link href="https://science.example.org/"/>
+  <updated>2025-09-02T12:00:00Z</updated>
+  <entry>
+    <title>Telescope spots an unusual exoplanet</title>
+    <link href="https://science.example.org/exoplanet"/>
+    <id>tag:science.example.org,2025:exoplanet</id>
+    <updated>2025-09-02T11:30:00Z</updated>
+    <published>2025-09-02T11:30:00Z</published>
+    <summary type="html">&lt;p&gt;Researchers report an unusual planet. It orbits its star in nine hours.&lt;/p&gt;</summary>
+  </entry>
+</feed>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Sample Tech Feed</title>
+    <link>https://example.com/</link>
+    <description>Technology news for tests</description>
+    <item>
+      <title>Chipmaker unveils a 2nm process</title>
+      <link>https://example.com/articles/2nm-process?utm_source=rss&amp;utm_medium=feed</link>
+      <guid isPermaLink="false">example-guid-1</guid>
+      <pubDate>Tue, 02 Sep 2025 10:15:00 GMT</pubDate>
+      <description>&lt;p&gt;The company announced a &lt;b&gt;2nm&lt;/b&gt; manufacturing process. Volume production starts next year. Analysts expect a modest yield improvement.&lt;/p&gt;</description>
+      <enclosure url="https://example.com/img/chip.jpg" type="image/jpeg" length="1024"/>
+    </item>
+    <item>
+      <title>Open source database hits version 20</title>
+      <link>https://example.com/articles/db-20</link>
+      <guid isPermaLink="false">example-guid-2</guid>
+      <pubDate>Mon, 01 Sep 2025 08:00:00 GMT</pubDate>
+      <description>A long awaited release landed today.</description>
+    </item>
+    <item>
+      <title>Entry without a date</title>
+      <link>https://example.com/articles/no-date</link>
+      <description>This item deliberately has no pubDate.</description>
+    </item>
+  </channel>
+</rss>

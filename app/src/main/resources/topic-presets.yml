@@ -1,0 +1,31 @@
+# Topic presets: high quality curated feeds per slug.
+#
+# Presets are a QUALITY optimisation, not a precondition. A topic whose slug has
+# no preset here still works: it falls back to Google News Search RSS with
+# `query = slug.replace('-', ' ')`. See TopicSlugParser / NewsAggregator.
+presets:
+  it:
+    query: "technology OR software OR programming"
+    feeds:
+      - https://feeds.arstechnica.com/arstechnica/technology-lab
+      - https://techcrunch.com/feed/
+      - https://www.theverge.com/rss/index.xml
+  science:
+    query: "science research"
+    feeds:
+      - https://www.sciencedaily.com/rss/all.xml
+      - https://phys.org/rss-feed/
+  ai:
+    query: "artificial intelligence"
+    feeds:
+      - https://www.technologyreview.com/topic/artificial-intelligence/feed
+  space:
+    query: "space exploration"
+    feeds:
+      - https://www.nasa.gov/rss/dyn/breaking_news.rss
+      - https://spacenews.com/feed/
+  security:
+    query: "cybersecurity OR infosec"
+    feeds:
+      - https://feeds.feedburner.com/TheHackersNews
+      - https://krebsonsecurity.com/feed/

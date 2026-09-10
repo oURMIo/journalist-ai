@@ -1,0 +1,53 @@
+# All user-facing bot texts live here (spec 9a: do not hardcode them in Java).
+# Placeholders are {name} tokens substituted by MessageTemplates.render(...).
+messages:
+  welcome: |
+    📌 <b>News topic: {slug}</b>
+
+    Этот топик автоматически наполняется новостями по теме «<b>{slug}</b>».
+
+    • Источники: {sources}
+    • Язык новостей: English
+    • Интервал обновления: каждые {interval} мин
+    • Не более {maxItems} новостей за раз
+
+    Формат каждой публикации: заголовок, краткий пересказ, дата и время (UTC), ссылка на оригинал.
+
+    Чтобы завести ещё одну тему — создайте топик с именем <code>{prefix}&lt;тема&gt;</code>
+    или отправьте команду <code>/newtopic &lt;тема&gt;</code>.
+  sources-fallback: "поиск по всем англоязычным источникам"
+  sources-more: "и ещё {count}"
+  help: |
+    🗞 <b>Journalist — news bot</b>
+
+    Я публикую свежие англоязычные новости в топики, имя которых начинается с <code>{prefix}</code>.
+    Создайте топик <code>{prefix}biotech</code> — и я начну слать туда новости про биотех.
+
+    <b>Команды</b>
+    /help — эта справка
+    /newtopic &lt;тема&gt; — создать новостной топик
+    /newtopics &lt;т1&gt; &lt;т2&gt; … — создать несколько топиков
+    /presets — доступные пресеты тематик
+    /bind [имя] — привязать текущий топик (для топиков, созданных до бота)
+    /unbind — отвязать текущий топик
+    /renametopic &lt;тема&gt; — переименовать текущий топик
+    /closetopic — закрыть текущий топик
+    /topics — реестр топиков
+    /status — состояние опроса
+    /now — внеочередной опрос текущего топика
+  not-admin: "Команда доступна только администраторам бота."
+  not-in-topic: "Эту команду нужно отправлять внутри новостного топика."
+  bind-usage: "Укажите имя топика: <code>/bind {prefix}&lt;тема&gt;</code> — отправьте это сообщение внутри нужного топика."
+  bind-not-news: "Имя <code>{name}</code> не начинается с <code>{prefix}</code> — такой топик я не отслеживаю."
+  bind-ok: "Топик привязан: <b>{name}</b> (тема: <code>{slug}</code>)."
+  unbind-ok: "Топик отвязан, новости сюда больше не приходят."
+  unbind-unknown: "Этот топик не числится в реестре."
+  newtopic-usage: "Укажите тему: <code>/newtopic biotech</code>"
+  newtopics-usage: "Укажите темы через пробел: <code>/newtopics it science ai</code>"
+  rename-usage: "Укажите новую тему: <code>/renametopic ai-safety</code>"
+  now-started: "Запускаю внеочередной опрос темы <code>{slug}</code>…"
+  now-done: "Опрос темы <code>{slug}</code> завершён: отправлено новостей — {sent}."
+  topics-empty: "Реестр топиков пуст."
+  presets-header: "<b>Доступные пресеты тематик</b>"
+  presets-fallback-note: "Тема без пресета тоже работает — через поиск Google News."
+  closetopic-ok: "Закрываю топик."

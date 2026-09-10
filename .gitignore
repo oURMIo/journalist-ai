@@ -1,0 +1,59 @@
+### Secrets ###
+.env
+
+### Configs ###
+/app/src/main/resources/config.properties
+/app/src/main/resources/useful-url.json
+/app/src/main/resources/project-list.json
+/app/src/main/resources/users-list.json
+/app/users-list.json
+/users-list.json
+/app/admin-chat-id.txt
+/admin-chat-id.txt
+
+### AI ###
+/.claude/settings.local.json
+
+### Logs ###
+logs/
+
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/

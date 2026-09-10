@@ -1,0 +1,87 @@
+spring:
+  application:
+    name: journalist
+
+  config:
+    import:
+      - optional:classpath:config.properties
+      - classpath:topic-presets.yml
+      - classpath:messages.yml
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/newsbot}
+    username: ${DB_USER:newsbot}
+    password: ${DB_PASSWORD:newsbot}
+    hikari:
+      pool-name: newsbot-pool
+      maximum-pool-size: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+bot:
+  # `bot.key` is the legacy local-dev fallback kept from the original skeleton
+  # (app/src/main/resources/config.properties, git-ignored). BOT_TOKEN wins.
+  token: ${BOT_TOKEN:${bot.key:}}
+  username: ${BOT_USERNAME:}
+  allowed-chat-ids: ${ALLOWED_CHAT_IDS:}
+  admin-user-ids: ${ADMIN_USER_IDS:}
+  poll-interval-minutes: ${POLL_INTERVAL_MINUTES:30}
+  max-items-per-topic: ${MAX_ITEMS_PER_TOPIC:5}
+  news-lookback-hours: ${NEWS_LOOKBACK_HOURS:24}
+  topic-prefix: ${TOPIC_PREFIX:news-}
+  bootstrap-topics: ${BOOTSTRAP_TOPICS:}
+  welcome-pin: ${WELCOME_PIN:true}
+  send-rate-per-minute: ${SEND_RATE_PER_MINUTE:17}
+  summarizer: ${SUMMARIZER:ollama}
+  link-preview: ${LINK_PREVIEW:FIRST_ONLY}
+  timezone: ${BOT_TIMEZONE:UTC}
+  seen-retention-days: ${SEEN_RETENTION_DAYS:30}
+  shutdown-drain-seconds: ${SHUTDOWN_DRAIN_SECONDS:20}
+  http:
+    timeout-seconds: ${HTTP_TIMEOUT_SECONDS:10}
+    retries: ${HTTP_RETRIES:2}
+    max-parallel-feeds: ${HTTP_MAX_PARALLEL_FEEDS:8}
+    user-agent: ${HTTP_USER_AGENT:JournalistNewsBot/1.0 (+https://github.com/journalist-news-bot)}
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://ollama:11434}
+    model: ${OLLAMA_MODEL:llama3.2:3b}
+    timeout-seconds: ${OLLAMA_TIMEOUT_SECONDS:120}
+    num-predict: ${OLLAMA_NUM_PREDICT:220}
+    temperature: ${OLLAMA_TEMPERATURE:0.2}
+    max-calls-per-hour: ${OLLAMA_MAX_CALLS_PER_HOUR:0}
+  llm:
+    api-key: ${LLM_API_KEY:}
+    model: ${LLM_MODEL:claude-opus-5}
+    base-url: ${LLM_BASE_URL:}
+    max-calls-per-hour: ${LLM_MAX_CALLS_PER_HOUR:100}
+    timeout-seconds: ${LLM_TIMEOUT_SECONDS:15}
+    max-tokens: ${LLM_MAX_TOKENS:400}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.dach: ${LOG_LEVEL:INFO}

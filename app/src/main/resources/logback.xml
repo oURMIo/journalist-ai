@@ -1,0 +1,37 @@
+<configuration>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%highlight(%-5level) %d{HH:mm:ss.SSS} [%blue(%t)] %yellow(%logger{30}): %msg%n%throwable</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>./logs/application.log</file>
+    <encoder>
+      <pattern>%highlight(%-5level) %d{HH:mm:ss.SSS} [%blue(%t)] %yellow(%logger{30}): %msg%n%throwable</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="ERROR_FILE" class="ch.qos.logback.core.FileAppender">
+    <file>./logs/error.log</file>
+    <append>true</append>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>ERROR</level>
+    </filter>
+    <encoder>
+      <pattern>%highlight(%-5level) %d{HH:mm:ss.SSS} [%blue(%t)] %yellow(%logger{30}): %msg%n%throwable</pattern>
+    </encoder>
+  </appender>
+
+  <root level="info">
+    <appender-ref ref="FILE"/>
+    <appender-ref ref="CONSOLE"/>
+  </root>
+
+  <!--
+    FILTER
+    <logger name="path" level="warn" additivity="false">
+      <appender-ref ref="CONSOLE"/>
+    </logger>
+  -->
+</configuration>
