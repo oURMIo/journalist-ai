@@ -63,7 +63,9 @@ services:
       ollama:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      # The host side is configurable: 8080 is a busy port, and a local run of the
+      # bot from an IDE already holds it. Inside the network it stays 8080.
+      - "${JOURNALIST_PORT:-8080}:8080"
     restart: unless-stopped
 
 volumes:

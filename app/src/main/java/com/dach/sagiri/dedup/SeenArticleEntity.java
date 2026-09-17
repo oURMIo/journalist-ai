@@ -33,6 +33,10 @@ public class SeenArticleEntity {
     @Column(name = "sent_at", nullable = false)
     private Instant sentAt;
 
+    /** Why the article was dropped; null when it was actually delivered. */
+    @Column(name = "filtered_reason")
+    private String filteredReason;
+
     @PrePersist
     void onInsert() {
         if (sentAt == null) {
@@ -86,5 +90,13 @@ public class SeenArticleEntity {
 
     public void setSentAt(Instant sentAt) {
         this.sentAt = sentAt;
+    }
+
+    public String getFilteredReason() {
+        return filteredReason;
+    }
+
+    public void setFilteredReason(String filteredReason) {
+        this.filteredReason = filteredReason;
     }
 }

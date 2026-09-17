@@ -29,3 +29,6 @@
 - Small commits, conventional commit messages.
 - If a requirement is ambiguous: stop, ask, record the assumption in
   `DECISIONS.md`.
+
+### Rules:
+@.claude/rules/working.md

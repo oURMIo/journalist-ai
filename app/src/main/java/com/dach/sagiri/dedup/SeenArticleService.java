@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -65,12 +66,26 @@ public class SeenArticleService {
     /** Records an article as delivered. Called only after Telegram accepted it. */
     @Transactional
     public void markSent(Long topicId, NewsItem item) {
+        record(topicId, item, null);
+    }
+
+    /**
+     * Records an article the topic filters rejected, so the next cycle does not
+     * evaluate — and pay a model for — the same rejection again.
+     */
+    @Transactional
+    public void markFiltered(Long topicId, NewsItem item, String reason) {
+        record(topicId, item, StringUtils.abbreviate(reason, 200));
+    }
+
+    private void record(Long topicId, NewsItem item, String filteredReason) {
         SeenArticleEntity entity = new SeenArticleEntity();
         entity.setTopicId(topicId);
         entity.setFingerprint(fingerprintOf(item));
         entity.setTitleHash(Fingerprints.titleHash(item.title()));
         entity.setUrl(item.url());
         entity.setSentAt(Instant.now());
+        entity.setFilteredReason(filteredReason);
         try {
             repository.save(entity);
         } catch (DataIntegrityViolationException e) {

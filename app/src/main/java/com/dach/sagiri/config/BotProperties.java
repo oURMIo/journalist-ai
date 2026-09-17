@@ -38,6 +38,7 @@ public class BotProperties {
     private int shutdownDrainSeconds = 20;
     private String googleNewsBaseUrl = "https://news.google.com/rss/search";
     private Http http = new Http();
+    private Filter filter = new Filter();
     private Llm llm = new Llm();
     private Ollama ollama = new Ollama();
 
@@ -195,6 +196,14 @@ public class BotProperties {
         this.googleNewsBaseUrl = googleNewsBaseUrl;
     }
 
+    public Filter getFilter() {
+        return filter;
+    }
+
+    public void setFilter(Filter filter) {
+        this.filter = filter;
+    }
+
     public Http getHttp() {
         return http;
     }
@@ -217,6 +226,30 @@ public class BotProperties {
 
     public void setOllama(Ollama ollama) {
         this.ollama = ollama;
+    }
+
+    /** Per-topic news filters, edited at runtime with {@code /filter}. */
+    public static class Filter {
+
+        /** Whether the model also judges an article by meaning, not only by word. */
+        private boolean aiCheck = true;
+        private int maxTermsPerTopic = 30;
+
+        public boolean isAiCheck() {
+            return aiCheck;
+        }
+
+        public void setAiCheck(boolean aiCheck) {
+            this.aiCheck = aiCheck;
+        }
+
+        public int getMaxTermsPerTopic() {
+            return maxTermsPerTopic;
+        }
+
+        public void setMaxTermsPerTopic(int maxTermsPerTopic) {
+            this.maxTermsPerTopic = maxTermsPerTopic;
+        }
     }
 
     /** Settings of the outbound HTTP client used to pull feeds. */

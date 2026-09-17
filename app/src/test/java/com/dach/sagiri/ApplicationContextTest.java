@@ -112,7 +112,8 @@ class ApplicationContextTest {
     void every_command_from_the_spec_is_registered() {
         assertThat(commands).isNotEmpty();
         List<String> expected = List.of("/start", "/help", "/newtopic", "/newtopics", "/presets",
-            "/bind", "/unbind", "/renametopic", "/closetopic", "/status", "/now", "/topics");
+            "/bind", "/unbind", "/renametopic", "/closetopic", "/status", "/now", "/topics",
+            "/filter", "/exclude", "/include");
 
         assertThat(expected).allSatisfy(name ->
             assertThat(commandRouter.find(name)).as(name).isPresent());

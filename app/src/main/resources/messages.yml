@@ -32,6 +32,9 @@ messages:
     /unbind — отвязать текущий топик
     /renametopic &lt;тема&gt; — переименовать текущий топик
     /closetopic — закрыть текущий топик
+    /filter — фильтры новостей этого топика
+    /exclude &lt;слова&gt; — не присылать новости про это
+    /include &lt;слова&gt; — присылать только про это
     /topics — реестр топиков
     /status — состояние опроса
     /now — внеочередной опрос текущего топика
@@ -51,3 +54,26 @@ messages:
   presets-header: "<b>Доступные пресеты тематик</b>"
   presets-fallback-note: "Тема без пресета тоже работает — через поиск Google News."
   closetopic-ok: "Закрываю топик."
+  filter-usage: |
+    <b>Фильтры новостей</b>
+    <code>/filter</code> — показать фильтры этого топика
+    <code>/exclude go, крипта</code> — не присылать новости про это
+    <code>/include kubernetes</code> — присылать только про это
+    <code>/filter remove go</code> — снять фильтр
+    <code>/filter clear</code> — снять все фильтры
+
+    Термины разделяются запятыми; фраза пишется целиком: <code>/exclude machine learning</code>
+  filter-header: "<b>Фильтры топика {slug}</b>"
+  filter-empty: "У топика <code>{slug}</code> фильтров нет — приходят все новости по теме."
+  filter-exclude-label: "🚫 Не присылать:"
+  filter-include-label: "✅ Только про:"
+  filter-ai-on: "🤖 ИИ дополнительно отсеивает статьи по смыслу, а не только по точному слову."
+  filter-ai-off: "🤖 Проверка ИИ выключена — сравниваю только по точному слову."
+  filter-added: "Фильтр обновлён ({kind}): {terms}"
+  filter-nothing-added: "Ничего не добавил: такие фильтры уже есть."
+  filter-limit: "Достигнут лимит в {max} фильтров на топик, лишнее не добавил."
+  filter-removed: "Фильтр снят: {terms}"
+  filter-not-found: "Такого фильтра у топика нет: {terms}"
+  filter-cleared: "Снял все фильтры топика: {count}."
+  filter-kind-exclude: "не присылать"
+  filter-kind-include: "только про"

@@ -68,16 +68,32 @@ actually executed here, not just implemented — see the note at the bottom.
 - [x] Summaries from a local Ollama container (default), with a hosted Anthropic
       alternative, a per-article cache, an hourly budget and an extractive fallback
 
+## Stage 8 — News filters ✅
+
+Beyond `docs/SPEC.md`, see `DECISIONS.md` §14.
+
+- [x] `topic_filters` table (`V2`), `EXCLUDE` / `INCLUDE` terms per topic
+- [x] `/filter`, `/exclude`, `/include`, `/filter remove`, `/filter clear`
+- [x] Whole-word matching over headline and description: `go` != `Google`
+- [x] Model check by meaning on top of the keywords, reusing the configured
+      summariser backend through `LlmGateway`
+- [x] Any model failure falls back to the keywords, never to silence
+- [x] Model rejections recorded in `seen_articles.filtered_reason`, so nothing is
+      judged twice; keyword rejections stay re-appliable
+- [x] `last_polled_at` advances only past finished work, so an article the model
+      could not judge and a send that failed are fetched again
+- [x] Filter checks capped at half the hourly LLM budget
+
 ## Tests
 
 | Run | Tests | Needs |
 |---|---|---|
-| `./gradlew test` | 90 | nothing — no network, no Docker |
-| `INTEGRATION_TESTS=true ./gradlew test` | 105 | one-time download of an embedded PostgreSQL |
+| `./gradlew test` | 146 | nothing — no network, no Docker |
+| `INTEGRATION_TESTS=true ./gradlew test` | 161 | one-time download of an embedded PostgreSQL |
 
 ## Verified here vs. not
 
-Verified by running it: the build, all 105 tests, the Flyway migration and
+Verified by running it: the build, all 161 tests, the Flyway migration and
 Hibernate schema validation against a real PostgreSQL, both unique indexes
 (including the partial one), the de-duplication round trip, and a full Spring
 context boot with Telegram mocked.

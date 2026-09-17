@@ -20,7 +20,7 @@ import com.dach.sagiri.news.model.NewsItem;
  * back to {@link ExtractiveSummarizer}, so the bot never goes silent because a
  * model is slow, missing or down.
  */
-public abstract class LlmSummarizer implements Summarizer {
+public abstract class LlmSummarizer implements Summarizer, LlmGateway {
 
     private static final Logger logger = LoggerFactory.getLogger(LlmSummarizer.class);
 
@@ -67,7 +67,7 @@ public abstract class LlmSummarizer implements Summarizer {
             return cached.get();
         }
 
-        if (!allowCall()) {
+        if (!allowCall(maxCallsPerHour)) {
             logger.warn("{} budget of {} call(s) per hour is exhausted, using the extractive "
                         + "summariser", backend(), maxCallsPerHour);
             return fallback.summarize(item);
@@ -81,6 +81,20 @@ public abstract class LlmSummarizer implements Summarizer {
         }
         store(fingerprint, summary);
         return summary;
+    }
+
+    /**
+     * Half the hourly budget is reserved for summaries: switching a filter on
+     * must not quietly turn every recap of the cycle extractive.
+     */
+    @Override
+    public String ask(String prompt, NewsItem item) {
+        if (!allowCall(Math.max(1, maxCallsPerHour / 2))) {
+            logger.warn("{} filter share of the {} call(s) per hour budget is spent, "
+                        + "the prompt is skipped", backend(), maxCallsPerHour);
+            return "";
+        }
+        return clean(generate(prompt, item));
     }
 
     static String promptFor(NewsItem item) {
@@ -121,7 +135,7 @@ public abstract class LlmSummarizer implements Summarizer {
     }
 
     /** A budget of zero or less means unlimited — sensible for a local model. */
-    private synchronized boolean allowCall() {
+    private synchronized boolean allowCall(int limit) {
         if (maxCallsPerHour <= 0) {
             return true;
         }
@@ -129,7 +143,7 @@ public abstract class LlmSummarizer implements Summarizer {
         while (!callTimestamps.isEmpty() && callTimestamps.peekFirst().isBefore(cutoff)) {
             callTimestamps.removeFirst();
         }
-        if (callTimestamps.size() >= maxCallsPerHour) {
+        if (callTimestamps.size() >= limit) {
             return false;
         }
         callTimestamps.addLast(Instant.now());

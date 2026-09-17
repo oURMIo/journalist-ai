@@ -61,6 +61,9 @@ bot:
   timezone: ${BOT_TIMEZONE:UTC}
   seen-retention-days: ${SEEN_RETENTION_DAYS:30}
   shutdown-drain-seconds: ${SHUTDOWN_DRAIN_SECONDS:20}
+  filter:
+    ai-check: ${FILTER_AI_CHECK:true}
+    max-terms-per-topic: ${FILTER_MAX_TERMS_PER_TOPIC:30}
   http:
     timeout-seconds: ${HTTP_TIMEOUT_SECONDS:10}
     retries: ${HTTP_RETRIES:2}

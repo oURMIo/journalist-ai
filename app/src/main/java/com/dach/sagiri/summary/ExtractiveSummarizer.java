@@ -56,7 +56,7 @@ public class ExtractiveSummarizer implements Summarizer {
     }
 
     /** Feed descriptions are HTML fragments; everything markup-ish has to go. */
-    static String plainText(String html) {
+    public static String plainText(String html) {
         if (StringUtils.isBlank(html)) {
             return "";
         }

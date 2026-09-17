@@ -34,6 +34,21 @@ public class MessageTemplates {
     private String presetsHeader = "";
     private String presetsFallbackNote = "";
     private String closetopicOk = "";
+    private String filterUsage = "";
+    private String filterHeader = "";
+    private String filterEmpty = "";
+    private String filterExcludeLabel = "";
+    private String filterIncludeLabel = "";
+    private String filterAiOn = "";
+    private String filterAiOff = "";
+    private String filterAdded = "";
+    private String filterNothingAdded = "";
+    private String filterLimit = "";
+    private String filterRemoved = "";
+    private String filterNotFound = "";
+    private String filterCleared = "";
+    private String filterKindExclude = "";
+    private String filterKindInclude = "";
 
     /** Substitutes {@code {key}} placeholders; unknown placeholders are left untouched. */
     public static String render(String template, Map<String, ?> vars) {
@@ -205,5 +220,125 @@ public class MessageTemplates {
 
     public void setPresetsFallbackNote(String presetsFallbackNote) {
         this.presetsFallbackNote = presetsFallbackNote;
+    }
+
+    public String getFilterUsage() {
+        return filterUsage;
+    }
+
+    public void setFilterUsage(String filterUsage) {
+        this.filterUsage = filterUsage;
+    }
+
+    public String getFilterHeader() {
+        return filterHeader;
+    }
+
+    public void setFilterHeader(String filterHeader) {
+        this.filterHeader = filterHeader;
+    }
+
+    public String getFilterEmpty() {
+        return filterEmpty;
+    }
+
+    public void setFilterEmpty(String filterEmpty) {
+        this.filterEmpty = filterEmpty;
+    }
+
+    public String getFilterExcludeLabel() {
+        return filterExcludeLabel;
+    }
+
+    public void setFilterExcludeLabel(String filterExcludeLabel) {
+        this.filterExcludeLabel = filterExcludeLabel;
+    }
+
+    public String getFilterIncludeLabel() {
+        return filterIncludeLabel;
+    }
+
+    public void setFilterIncludeLabel(String filterIncludeLabel) {
+        this.filterIncludeLabel = filterIncludeLabel;
+    }
+
+    public String getFilterAiOn() {
+        return filterAiOn;
+    }
+
+    public void setFilterAiOn(String filterAiOn) {
+        this.filterAiOn = filterAiOn;
+    }
+
+    public String getFilterAiOff() {
+        return filterAiOff;
+    }
+
+    public void setFilterAiOff(String filterAiOff) {
+        this.filterAiOff = filterAiOff;
+    }
+
+    public String getFilterAdded() {
+        return filterAdded;
+    }
+
+    public void setFilterAdded(String filterAdded) {
+        this.filterAdded = filterAdded;
+    }
+
+    public String getFilterNothingAdded() {
+        return filterNothingAdded;
+    }
+
+    public void setFilterNothingAdded(String filterNothingAdded) {
+        this.filterNothingAdded = filterNothingAdded;
+    }
+
+    public String getFilterLimit() {
+        return filterLimit;
+    }
+
+    public void setFilterLimit(String filterLimit) {
+        this.filterLimit = filterLimit;
+    }
+
+    public String getFilterRemoved() {
+        return filterRemoved;
+    }
+
+    public void setFilterRemoved(String filterRemoved) {
+        this.filterRemoved = filterRemoved;
+    }
+
+    public String getFilterNotFound() {
+        return filterNotFound;
+    }
+
+    public void setFilterNotFound(String filterNotFound) {
+        this.filterNotFound = filterNotFound;
+    }
+
+    public String getFilterCleared() {
+        return filterCleared;
+    }
+
+    public void setFilterCleared(String filterCleared) {
+        this.filterCleared = filterCleared;
+    }
+
+    public String getFilterKindExclude() {
+        return filterKindExclude;
+    }
+
+    public void setFilterKindExclude(String filterKindExclude) {
+        this.filterKindExclude = filterKindExclude;
+    }
+
+    public String getFilterKindInclude() {
+        return filterKindInclude;
+    }
+
+    public void setFilterKindInclude(String filterKindInclude) {
+        this.filterKindInclude = filterKindInclude;
     }
 }

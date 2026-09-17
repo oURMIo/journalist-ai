@@ -161,3 +161,104 @@ Docker was not running on the machine where this was built, so
 Telegram session. What *was* verified: the full build, 94 tests, the Flyway
 migration and Hibernate schema validation against a real PostgreSQL, and a full
 Spring context boot.
+
+## 14. Topic filters: keywords first, the model second
+
+Not in `docs/SPEC.md` — requested afterwards: "interested in IT, but not in the
+Go programming language". Two layers, because neither alone is enough.
+
+**Keywords** live in a new `topic_filters` table (`V2__topic_filters.sql`), one
+row per term, `EXCLUDE` or `INCLUDE`, edited from Telegram with `/exclude`,
+`/include`, `/filter remove`, `/filter clear`. Matching is whole-word over the
+headline plus the feed description: both sides are reduced to lowercase words
+separated by single spaces, so `go` hits "Go 1.24 is out" and misses "Google" —
+a plain `contains` gets exactly this case wrong. Commas separate terms, spaces do
+not, so `machine learning` stays one term.
+
+**The model** catches what the literal word cannot: *Golang*, *the Go team*,
+*gopher*. It is asked for one word, `ALLOW` or `BLOCK`, and only when the
+keywords let the article through — a literal hit blocks without paying for a
+call. There is no second backend: `AiRelevanceChecker` reuses whichever
+summariser `SUMMARIZER` already selected, through the new `LlmGateway` interface
+that `LlmSummarizer` implements, so the hourly budget, the timeouts and the
+"only the headline and the description ever leave the process" rule all continue
+to hold.
+
+Anything short of a clear verdict — model down, model slow, budget spent,
+`SUMMARIZER=extractive`, an unparsable answer — is `UNKNOWN`, and an article that
+broke no keyword rule is then published. The filter narrows the feed; it must
+never silence it. The one place `UNKNOWN` blocks is a topic with an `INCLUDE`
+list and no matching keyword, which is the rule the user typed by hand.
+
+An `INCLUDE` list is a hint rather than a gate: a model `ALLOW` overrules a
+missing required keyword, so `/include kubernetes` still delivers an article
+titled "K8s operators in practice".
+
+### Only a model verdict is remembered
+
+`V2` adds a nullable `filtered_reason` to `seen_articles`, and `markFiltered`
+writes a row there — but only for a rejection the model actually answered.
+Without it a blocked article would be re-judged on every cycle, 48 model calls a
+day for one article nobody wants. `markSent` is untouched and still happens only
+after Telegram accepted the message; the new column is what tells the two apart.
+
+A keyword rejection is *not* stored: it costs nothing to apply again, and a
+stored row would outlive the term that caused it.
+
+### The look-back mark is what actually decides "next cycle"
+
+Storing or not storing a rejection only matters if the article can come back at
+all, and by default it cannot: `last_polled_at` is the look-back start of the
+next cycle (§6 of the spec), and both providers keep only
+`publishedAt.isAfter(since)`. A cycle that ends with `markPolled(now)` therefore
+buries everything it walked past — an article it could not judge, and one whose
+send failed, the comment about "retried on the next cycle" notwithstanding.
+
+So the mark now moves to `now` only when the cycle finished its work. Anything
+left unresolved — a send that failed, or a model that was there to answer and
+could not — holds it just before that article, and the next cycle fetches it
+again. Hence the three ways of rejecting an article in `FilterDecision`:
+
+| outcome | when | next cycle |
+|---|---|---|
+| `BLOCK` | keyword hit, or a required keyword missing with no model configured | applies the same rule again, for free |
+| `BLOCK_AND_REMEMBER` | the model said BLOCK | never sees it again: the row in `seen_articles` |
+| `POSTPONE` | a required keyword missing and the model could not answer | fetches and asks again |
+
+`POSTPONE` cannot stall a topic for long: the look-back never reaches further
+back than `NEWS_LOOKBACK_HOURS`, so an article the model keeps failing on drops
+out of the window after a day.
+
+The remaining cost: an article the model blocked stays blocked after the term is
+removed. With a 24-hour look-back that is a non-issue, and a second cache table
+with its own retention buys nothing.
+
+### The filter check may spend half the hourly budget
+
+`ask` and `summarize` share one sliding window, and the filter runs first, so
+without a limit a filtered topic could spend the whole hosted-LLM budget on
+verdicts and leave every recap of the cycle extractive. `ask` therefore stops at
+`maxCallsPerHour / 2`. The configured ceiling still holds — filtering never
+raises the bill above `LLM_MAX_CALLS_PER_HOUR` — and the local backend, where the
+budget is unlimited by default, is unaffected.
+
+### What a term may be
+
+Terms are stored normalised, and normalisation drops everything that is not a
+letter or a digit. `C++` and `C#` both become `c`, which would block every
+headline containing a stray "C", so a term shorter than two characters is
+rejected outright — those two languages cannot be filtered by keyword, and the
+model check is what catches them. A term longer than 80 characters is cut at a
+word boundary, because matching compares whole word sequences and a term cut
+mid-word could never match anything while still occupying one of the 30 slots.
+
+### A chatty model still gets read correctly
+
+The prompt asks for one word, and a 3B model answers "ALLOW, there is nothing to
+block here". Scanning for `BLOCK` anywhere would drop that article — and, being a
+model verdict, drop it permanently. The verdict is therefore read from the start
+of the answer only (behind a short `Answer:` label, if any). "I would not block
+this one" carries no verdict and is `UNKNOWN`: the two mistakes are not
+symmetric, since a wrong `BLOCK` is stored and a missing verdict costs one more
+attempt.
+

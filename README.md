@@ -113,8 +113,55 @@ Every command is answered in the topic it was sent from.
 | `/status` | admin | anywhere | active topics, last poll, counters |
 | `/now` | admin | inside a topic | poll this topic immediately |
 | `/topics` | admin | anywhere | dump the registry |
+| `/filter` | admin | inside a topic | show the filters of this topic |
+| `/exclude <words>` | admin | inside a topic | never send news about these |
+| `/include <words>` | admin | inside a topic | send only news about these |
+| `/filter remove <word>` | admin | inside a topic | drop one filter |
+| `/filter clear` | admin | inside a topic | drop them all |
 
 Unknown commands are ignored without a reply.
+
+---
+
+## Filters
+
+A topic can be narrowed without leaving Telegram. Interested in IT but tired of
+one programming language:
+
+```
+/exclude go, golang
+/include kubernetes, databases     # optional: only these subjects
+/filter                            # what is set right now
+```
+
+Terms are separated by commas, so a phrase stays one term
+(`/exclude machine learning`). They are matched as whole words against the
+headline and the feed description: `go` hits "Go 1.24 is out" and does not hit
+"Google".
+
+Whole words are not enough on their own — the same subject arrives as *Golang*,
+*the Go team*, *gopher* — so an article that survived the keywords is also shown
+to the summariser's model (`SUMMARIZER=ollama` by default), together with the
+topic and its filters, and asked for one word: `ALLOW` or `BLOCK`. Only the
+headline and the feed description are sent, exactly as for summaries.
+
+The model narrows the feed, it never silences it: when it is down, slow or out
+of budget the keywords alone decide, and an article that broke no rule is
+published. Set `FILTER_AI_CHECK=false` to switch the model check off and match by
+literal word only.
+
+Articles the model rejected are recorded in `seen_articles` with the reason, so
+the same article is not judged — or paid for — twice. A keyword rejection is not
+recorded: it is free to apply again. And when the model was supposed to answer
+and could not, the article is not dropped at all — the poll mark stays where it
+is, so the next cycle fetches it and asks again.
+
+Two terms are refused: anything shorter than two characters after normalisation
+(`C++` and `C#` both reduce to `c`, which would block every stray "C" — the model
+check is what catches those), and a term that survives only as half a word.
+On `SUMMARIZER=anthropic` the filter may use at most half of
+`LLM_MAX_CALLS_PER_HOUR`, so turning a filter on cannot make every recap
+extractive.
 
 ---
 
@@ -185,12 +232,15 @@ All settings come from the environment; defaults live in `application.yaml`.
 | `SEND_RATE_PER_MINUTE` | no | `17` | outbound throttle (Telegram allows ~20/min per group) |
 | `LINK_PREVIEW` | no | `FIRST_ONLY` | `FIRST_ONLY` \| `ALWAYS` \| `NEVER` |
 | `SEEN_RETENTION_DAYS` | no | `30` | how long a sent article is remembered |
+| `FILTER_AI_CHECK` | no | `true` | let the model judge an article by meaning, not only by word |
+| `FILTER_MAX_TERMS_PER_TOPIC` | no | `30` | how many filter terms one topic may hold |
 | `SUMMARIZER` | no | `ollama` | `ollama` \| `anthropic` \| `extractive` |
 | `OLLAMA_MODEL` | no | `llama3.2:3b` | model pulled into the ollama container |
 | `OLLAMA_BASE_URL` | no | `http://ollama:11434` | set by compose |
 | `OLLAMA_TIMEOUT_SECONDS` | no | `120` | how long one summary may take |
 | `LLM_API_KEY` / `LLM_MODEL` | no | — / `claude-opus-5` | for `SUMMARIZER=anthropic` |
 | `LLM_MAX_CALLS_PER_HOUR` | no | `100` | hosted-LLM budget; over it, extractive is used |
+| `JOURNALIST_PORT` | no | `8080` | host port for `/actuator/health`; change it when 8080 is taken |
 | `LOG_LEVEL` | no | `INFO` | |
 
 Running the jar outside Docker without an Ollama server is fine: every call fails
