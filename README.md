@@ -118,8 +118,52 @@ Every command is answered in the topic it was sent from.
 | `/include <words>` | admin | inside a topic | send only news about these |
 | `/filter remove <word>` | admin | inside a topic | drop one filter |
 | `/filter clear` | admin | inside a topic | drop them all |
+| `/query` | admin | inside a topic | what this topic is about and what it searches for |
+| `/query <text>` | admin | inside a topic | search for exactly this instead |
+| `/query auto` | admin | inside a topic | hand the subject back to the model |
 
 Unknown commands are ignored without a reply.
+
+---
+
+## What a topic is about
+
+A topic name is one or two words, and a search engine answers those words
+literally: `news-java` used to be served volcanoes, because Java is also an
+island. So the first time a topic is polled, the configured model is asked once
+what a reader of a feed with that name means, and the answer is stored with the
+topic:
+
+```
+java  ->  the Java programming language, the JVM and its ecosystem
+          "java programming" OR jvm OR jdk OR "spring boot" -"java island" -volcano
+```
+
+The bot posts that once into the topic, so a wrong guess is visible rather than
+silently shaping the feed. Both halves are then used: the query is what the
+sources are asked for, and the subject is what the relevance check judges each
+headline against — which is what catches the wrong meaning in feeds that answer
+no query at all.
+
+Nothing about this is required. With `TOPIC_PROFILE=false`, with
+`SUMMARIZER=extractive`, or when the model is simply unreachable, a topic keeps
+searching for its own name exactly as before, and the next cycle tries again.
+
+```
+/query                                       # subject, query, where it came from
+/query "java programming" OR jvm OR jdk      # search for this instead
+/query auto                                  # derive it again
+```
+
+A query written by hand wins over everything and survives a rename that only
+changed the emoji; renaming a topic to another subject starts it over. Google
+News syntax works: `OR`, quotes for a phrase, `-word` to exclude. A preset
+(`topic-presets.yml`) still outranks a derived query and keeps its curated feeds.
+
+`/query <text>` also drops the derived subject, on purpose: you type it when the
+model read the topic wrong, and a wrong subject would go on rejecting — by
+meaning, permanently — the very articles the new query was written to find. The
+topic then runs on its keyword filters alone until `/query auto`.
 
 ---
 
@@ -144,6 +188,10 @@ Whole words are not enough on their own — the same subject arrives as *Golang*
 to the summariser's model (`SUMMARIZER=ollama` by default), together with the
 topic and its filters, and asked for one word: `ALLOW` or `BLOCK`. Only the
 headline and the feed description are sent, exactly as for summaries.
+
+A topic whose subject is known (see above) is checked this way even with no
+keyword rule at all — that is what stops the wrong meaning of the name when it
+arrives through a curated feed rather than through the search query.
 
 The model narrows the feed, it never silences it: when it is down, slow or out
 of budget the keywords alone decide, and an article that broke no rule is
@@ -229,6 +277,7 @@ All settings come from the environment; defaults live in `application.yaml`.
 | `TOPIC_PREFIX` | no | `news-` | prefix marking the bot's topics |
 | `BOOTSTRAP_TOPICS` | no | empty | subjects created on start-up |
 | `WELCOME_PIN` | no | `true` | pin the welcome message |
+| `TOPIC_PROFILE` | no | `true` | let the model read an ambiguous topic name once and say what it is about |
 | `SEND_RATE_PER_MINUTE` | no | `17` | outbound throttle (Telegram allows ~20/min per group) |
 | `LINK_PREVIEW` | no | `FIRST_ONLY` | `FIRST_ONLY` \| `ALWAYS` \| `NEVER` |
 | `SEEN_RETENTION_DAYS` | no | `30` | how long a sent article is remembered |

@@ -262,3 +262,109 @@ this one" carries no verdict and is `UNKNOWN`: the two mistakes are not
 symmetric, since a wrong `BLOCK` is stored and a missing verdict costs one more
 attempt.
 
+
+## 15. An ambiguous topic name is read once, by the model
+
+Reported after §14: a topic named `news-java` was served news about the island
+and its volcanoes. Nothing in the bot was broken — `TopicQueryResolver` turned
+the slug into the query `java`, Google News answered that word honestly, and
+"java" names two unrelated subjects.
+
+Filtering cannot fix this. A filter removes articles; it cannot make the search
+return the ones nobody asked for. A topic where 90% of the results are volcanoes
+would go near-silent instead of going wrong, which is not better. The fix has to
+happen before anything is fetched, in the query itself.
+
+So the slug is read once, by whichever model `SUMMARIZER` already configured,
+through the same `LlmGateway` the filter uses. The answer is two things, and both
+are stored on the topic (`V3__topic_profile.sql`):
+
+| column | what it is | what uses it |
+|---|---|---|
+| `query` | a search expression that finds the subject and not its namesakes | both providers |
+| `domain` | the subject in one sentence | the relevance check, as prompt context |
+
+`profile_source` says where the query came from — `SLUG`, `MODEL` or `USER` —
+because the three must not overwrite each other.
+
+### Deriving happens on the first poll, not at registration
+
+A model call takes seconds on a hosted backend and up to a minute on a 3B model
+on CPU. An incoming `forum_topic_created` update must not wait for that, and the
+welcome message must not be delayed by it. The polling job is already a
+background job with nobody watching, so `TopicProfileService.queryFor` derives
+there. The side effect is the useful one: every topic that existed before this
+change also gets a subject, on its next cycle, with nobody doing anything.
+
+The write is conditional — `applyDerivedProfile` only fires while the source is
+still `SLUG` — so the scheduler and a `/now` running at the same moment cannot
+store two profiles or announce twice. Same idiom as the welcome claim in §9. Two
+threads can still *ask* twice, which costs one extra call and nothing else.
+
+A backend that answered *nothing* is not asked again for fifteen minutes. A
+wedged Ollama
+answers with a timeout rather than an error, `OLLAMA_TIMEOUT_SECONDS` defaults to
+120, and deriving happens at the head of `pollTopic`: without the cooldown, ten
+un-profiled topics would burn twenty minutes before the first feed of the cycle
+was fetched, and one `/now` would block every other command for two. The cooldown
+is shared by all topics because the backend is one process, and so is its
+outage. Only a blank answer arms it: `ask` returns `""` for a timeout, a non-2xx
+and a spent budget, so a non-blank answer proves the backend is up. An answer in
+the wrong *shape* is one slug the model handled badly — arming the cooldown on
+that would let a single awkward slug, always polled first in a stable topic
+order, keep every other topic from ever being profiled.
+
+### The reader is told, and can overrule
+
+The derived subject is posted once into the topic itself, together with the query
+that will actually be searched — which for a topic with a preset is the preset's,
+not the derived one. A guess that shapes the feed silently is worse than a guess
+the reader can see: `/query` shows the subject, the query and where it came from,
+`/query <text>` replaces it, and `/query auto` hands it back to the model. A
+`USER` query is never overwritten — not by a later derivation, and not by a
+rename that only changed the emoji. `register` now rewrites the profile only when
+the slug actually changed, which is the one case where the old subject really is
+wrong.
+
+**`/query <text>` also clears the derived subject, and that is the important
+half.** A reader types it precisely when the model read the topic wrong, and a
+wrong subject is not a cosmetic leftover: the relevance check would go on
+blocking, by meaning, exactly the articles the new query was written to find, and
+a model rejection is *remembered* (§14), so the topic would deliver nothing at
+all and no command would bring it back. With no subject stored, the topic is
+judged by its keyword rules alone — the behaviour that shipped before this
+change. Only `/query auto` asks the model again.
+
+Priority when a topic is polled: `USER` > preset > `MODEL` > the bare slug. A
+preset still wins over a derived query because its feeds are curated by hand and
+its query was written to go with them; a reader who disagrees types `/query`.
+
+### The relevance check now has the subject to check against
+
+§14 gave the model the topic slug, which for `java` says exactly as little to the
+model as it did to Google. `TopicFilters` therefore carries the domain, and
+`ArticleFilter` no longer short-circuits on "no keyword rules": a topic with a
+known subject is checked even when the reader typed nothing. That is what catches
+the wrong meaning arriving through a curated feed, which answers no query at all.
+
+The cost is one model call per article per topic, where before an unfiltered
+topic cost none. With the default local Ollama that is free and slow; on
+`SUMMARIZER=anthropic` it stays inside the same half-budget as §14, and
+`FILTER_AI_CHECK=false` switches it off. An `UNKNOWN` verdict here publishes the
+article: a topic whose model is down must go on delivering news.
+
+### Everything about it is optional
+
+No model, `TOPIC_PROFILE=false`, `SUMMARIZER=extractive`, an unreachable Ollama,
+an answer in the wrong shape — the topic keeps searching for its own name, which
+is precisely the behaviour that shipped before this change, and a later cycle
+tries again. A backend that is down costs one call per fifteen minutes rather
+than one per topic per cycle; a model that keeps mangling one particular slug
+costs one call per cycle for that topic and holds up nothing else.
+
+The model's query is not second-guessed. It is cleaned — one line, no brackets or
+backticks, cut at a word boundary at 200 characters — and the excluded meanings
+it names are appended as `-term`, which both providers pass through. Rejecting a
+query for "not looking related enough to the slug" was considered and dropped: it
+would have thrown away good queries like `diplomacy OR geopolitics` for
+`foreign-policy`, and `/query` is the escape hatch that makes the guess safe.

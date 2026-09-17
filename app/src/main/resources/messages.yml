@@ -35,6 +35,7 @@ messages:
     /filter — фильтры новостей этого топика
     /exclude &lt;слова&gt; — не присылать новости про это
     /include &lt;слова&gt; — присылать только про это
+    /query — что и где я ищу по этой теме, и как это поправить
     /topics — реестр топиков
     /status — состояние опроса
     /now — внеочередной опрос текущего топика
@@ -77,3 +78,37 @@ messages:
   filter-cleared: "Снял все фильтры топика: {count}."
   filter-kind-exclude: "не присылать"
   filter-kind-include: "только про"
+  topic-profile-derived: |
+    🎯 <b>Тема «{slug}»</b> — определил область интересов
+
+    Это про: {domain}
+    Ищу по запросу: <code>{query}</code>
+
+    Если тема понята неверно — задайте запрос сами: <code>/query &lt;слова&gt;</code>
+  query-header: |
+    🔎 <b>Тема «{slug}»</b>
+
+    Это про: {domain}
+    Ищу по запросу: <code>{query}</code>
+    Запрос взят: {source}
+  query-feeds: "Плюс курируемых лент: {count}"
+  query-domain-unknown: "пока не определено — определю при следующем опросе"
+  query-domain-dropped: "не используется — запрос задан вручную; вернуть: <code>/query auto</code>"
+  query-source-slug: "из имени топика"
+  query-source-preset: "из пресета тематики"
+  query-source-model: "определён ИИ по имени топика"
+  query-source-user: "задан вручную"
+  query-usage: |
+    <b>Поисковый запрос топика</b>
+    <code>/query</code> — показать, что и где я ищу
+    <code>/query "java programming" OR jvm OR jdk</code> — искать именно это
+    <code>/query auto</code> — вернуть автоопределение темы
+
+    Работает синтаксис Google News: <code>OR</code>, кавычки для фразы, <code>-слово</code> — исключить.
+    Свой запрос отменяет и определение темы: дальше фильтрую только по вашим словам.
+  query-set: |
+    Запрос обновлён: <code>{query}</code>
+
+    Проверить сразу — <code>/now</code>.
+  query-reset: |
+    Вернул автоопределение темы. Определю её заново при следующем опросе — или сразу через <code>/now</code>.

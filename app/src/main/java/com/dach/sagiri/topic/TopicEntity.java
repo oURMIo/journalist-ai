@@ -2,6 +2,8 @@ package com.dach.sagiri.topic;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,6 +44,14 @@ public class TopicEntity {
 
     @Column(name = "query", nullable = false)
     private String query;
+
+    /** The subject in words; null until the model has read the slug. */
+    @Column(name = "domain")
+    private String domain;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "profile_source", nullable = false)
+    private TopicProfileSource profileSource = TopicProfileSource.SLUG;
 
     @Column(name = "active", nullable = false)
     private boolean active;
@@ -123,6 +133,22 @@ public class TopicEntity {
 
     public void setQuery(String query) {
         this.query = query;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public TopicProfileSource getProfileSource() {
+        return profileSource;
+    }
+
+    public void setProfileSource(TopicProfileSource profileSource) {
+        this.profileSource = profileSource;
     }
 
     public boolean isActive() {

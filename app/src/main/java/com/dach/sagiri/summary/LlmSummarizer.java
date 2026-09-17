@@ -52,9 +52,10 @@ public abstract class LlmSummarizer implements Summarizer, LlmGateway {
     /**
      * Asks the model for a summary.
      *
+     * @param label what the prompt is about, for logs only
      * @return the summary, or an empty string on any failure — never throws
      */
-    protected abstract String generate(String prompt, NewsItem item);
+    protected abstract String generate(String prompt, String label);
 
     @Override
     public String summarize(NewsItem item) {
@@ -73,7 +74,7 @@ public abstract class LlmSummarizer implements Summarizer, LlmGateway {
             return fallback.summarize(item);
         }
 
-        String summary = clean(generate(promptFor(item), item));
+        String summary = clean(generate(promptFor(item), item.title()));
         if (StringUtils.isBlank(summary)) {
             logger.debug("{} returned nothing for '{}', using the extractive summariser",
                 backend(), item.title());
@@ -88,13 +89,13 @@ public abstract class LlmSummarizer implements Summarizer, LlmGateway {
      * must not quietly turn every recap of the cycle extractive.
      */
     @Override
-    public String ask(String prompt, NewsItem item) {
+    public String ask(String prompt, String label) {
         if (!allowCall(Math.max(1, maxCallsPerHour / 2))) {
             logger.warn("{} filter share of the {} call(s) per hour budget is spent, "
                         + "the prompt is skipped", backend(), maxCallsPerHour);
             return "";
         }
-        return clean(generate(prompt, item));
+        return clean(generate(prompt, label));
     }
 
     static String promptFor(NewsItem item) {

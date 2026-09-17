@@ -45,4 +45,26 @@ public interface TopicRepository extends JpaRepository<TopicEntity, Long> {
     @Query("update TopicEntity t set t.lastPolledAt = :polledAt, t.updatedAt = :polledAt "
            + "where t.id = :id")
     int markPolled(@Param("id") Long id, @Param("polledAt") Instant polledAt);
+
+    /**
+     * Stores what the model made of the slug, but only while nothing better is
+     * there. Two cycles - the scheduler and a {@code /now} - can derive the same
+     * topic at once, and a hand-written query must survive both.
+     */
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update TopicEntity t set t.domain = :domain, t.query = :query, "
+           + "t.profileSource = com.dach.sagiri.topic.TopicProfileSource.MODEL, "
+           + "t.updatedAt = :now where t.id = :id and t.profileSource = "
+           + "com.dach.sagiri.topic.TopicProfileSource.SLUG")
+    int applyDerivedProfile(@Param("id") Long id, @Param("domain") String domain,
+        @Param("query") String query, @Param("now") Instant now);
+
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update TopicEntity t set t.domain = :domain, t.query = :query, "
+           + "t.profileSource = :source, t.updatedAt = :now where t.id = :id")
+    int setProfile(@Param("id") Long id, @Param("domain") String domain,
+        @Param("query") String query, @Param("source") TopicProfileSource source,
+        @Param("now") Instant now);
 }

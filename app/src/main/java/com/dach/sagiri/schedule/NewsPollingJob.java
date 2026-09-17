@@ -21,7 +21,7 @@ import com.dach.sagiri.telegram.MessageFormatter;
 import com.dach.sagiri.telegram.OutgoingMessage;
 import com.dach.sagiri.telegram.TelegramSender;
 import com.dach.sagiri.topic.TopicEntity;
-import com.dach.sagiri.topic.TopicQueryResolver;
+import com.dach.sagiri.topic.TopicProfileService;
 import com.dach.sagiri.topic.TopicRegistryService;
 import com.pengrad.telegrambot.response.SendResponse;
 
@@ -43,7 +43,7 @@ public class NewsPollingJob {
     private static final int MAX_SEND_FAILURES = 3;
 
     private final TopicRegistryService registry;
-    private final TopicQueryResolver queryResolver;
+    private final TopicProfileService profiles;
     private final NewsAggregator aggregator;
     private final SeenArticleService seenArticles;
     private final ArticleFilter articleFilter;
@@ -53,12 +53,12 @@ public class NewsPollingJob {
     private final PollingState state;
     private final BotProperties properties;
 
-    public NewsPollingJob(TopicRegistryService registry, TopicQueryResolver queryResolver,
+    public NewsPollingJob(TopicRegistryService registry, TopicProfileService profiles,
         NewsAggregator aggregator, SeenArticleService seenArticles, ArticleFilter articleFilter,
         Summarizer summarizer, MessageFormatter formatter, TelegramSender sender,
         PollingState state, BotProperties properties) {
         this.registry = registry;
-        this.queryResolver = queryResolver;
+        this.profiles = profiles;
         this.aggregator = aggregator;
         this.seenArticles = seenArticles;
         this.articleFilter = articleFilter;
@@ -99,7 +99,7 @@ public class NewsPollingJob {
      * @return how many news messages were actually delivered
      */
     public int pollTopic(TopicEntity topic) {
-        TopicQuery query = queryResolver.resolve(topic.getSlug());
+        TopicQuery query = profiles.queryFor(topic);
         Instant since = lookbackStart(topic);
         int maxItems = properties.getMaxItemsPerTopic();
 

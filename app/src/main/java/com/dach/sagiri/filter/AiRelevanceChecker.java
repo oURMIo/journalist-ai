@@ -15,12 +15,14 @@ import com.dach.sagiri.summary.LlmGateway;
 import com.dach.sagiri.summary.Summarizer;
 
 /**
- * Asks the model whether an article is one the reader asked not to get.
+ * Asks the model whether an article belongs in a topic.
  * <p>
  * Keyword matching only sees the literal word; the model catches the same
  * subject under another name — "Golang", "the Go team", "gopher" for a filter on
- * {@code go}. Only the headline and the feed description are sent, exactly as
- * for summaries.
+ * {@code go} — and, given the domain of the topic, the opposite case too: an
+ * article that matches the name of the topic but not its subject, "Java" the
+ * island under a topic about the language. Only the headline and the feed
+ * description are sent, exactly as for summaries.
  * <p>
  * Anything short of a clear answer is {@link Verdict#UNKNOWN}: a model that is
  * down, slow or out of budget must not silently swallow the news.
@@ -71,7 +73,7 @@ public class AiRelevanceChecker {
         if (!available()) {
             return Verdict.UNKNOWN;
         }
-        Verdict verdict = parse(gateway.ask(prompt(item, filters), item));
+        Verdict verdict = parse(gateway.ask(prompt(item, filters), item.title()));
         logger.debug("AI verdict {} for '{}' in topic '{}'", verdict, item.title(),
             filters.slug());
         return verdict;
@@ -81,6 +83,13 @@ public class AiRelevanceChecker {
         StringBuilder prompt = new StringBuilder()
             .append("You are a news filter for a reader following the topic \"")
             .append(filters.slug()).append("\".\n");
+        if (filters.hasDomain()) {
+            // Without this the model is as lost as the search engine: "java" alone
+            // does not say which java the reader meant.
+            prompt.append("That topic means: ").append(filters.domain()).append(".\n")
+                .append("An article that only matches the name of the topic while being ")
+                .append("about a different subject is unwanted.\n");
+        }
         if (!filters.exclude().isEmpty()) {
             prompt.append("The reader does NOT want anything about: ")
                 .append(join(filters.exclude())).append(".\n");

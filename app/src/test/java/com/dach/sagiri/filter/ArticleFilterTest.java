@@ -36,9 +36,14 @@ class ArticleFilterTest {
     }
 
     private TopicFilters rules(List<String> exclude, List<String> include) {
-        TopicFilters rules = new TopicFilters("it", exclude, include);
+        TopicFilters rules = new TopicFilters("it", "", exclude, include);
         when(filters.of(topic)).thenReturn(rules);
         return rules;
+    }
+
+    /** A topic that knows its subject but carries no keyword rule of its own. */
+    private TopicFilters domainOnly() {
+        return new TopicFilters("java", "the Java programming language", List.of(), List.of());
     }
 
     /** The job reads the rules once per cycle and hands them to every decision. */
@@ -112,6 +117,34 @@ class ArticleFilterTest {
         assertThat(decision.allowed()).isFalse();
         assertThat(decision.postponed()).as("ask again once the model is back").isTrue();
         assertThat(decision.remember()).isFalse();
+    }
+
+    @Test
+    void a_known_subject_is_checked_even_without_a_single_keyword_rule() {
+        when(ai.check(any(), any())).thenReturn(Verdict.BLOCK);
+
+        FilterDecision decision = decide(domainOnly(), item("Mount Merapi erupts on Java"));
+
+        assertThat(decision.allowed()).isFalse();
+        assertThat(decision.reason()).isEqualTo("ai");
+        assertThat(decision.remember()).as("cost a model call").isTrue();
+    }
+
+    @Test
+    void an_article_of_the_right_subject_passes_the_domain_check() {
+        when(ai.check(any(), any())).thenReturn(Verdict.ALLOW);
+
+        assertThat(decide(domainOnly(), item("JDK 25 ships scoped values")).allowed()).isTrue();
+    }
+
+    @Test
+    void a_model_that_cannot_answer_never_silences_a_topic_that_asked_for_nothing() {
+        when(ai.available()).thenReturn(true);
+        when(ai.check(any(), any())).thenReturn(Verdict.UNKNOWN);
+
+        assertThat(decide(domainOnly(), item("Mount Merapi erupts on Java")).allowed())
+            .as("the filter narrows the feed, it does not stop it")
+            .isTrue();
     }
 
     @Test

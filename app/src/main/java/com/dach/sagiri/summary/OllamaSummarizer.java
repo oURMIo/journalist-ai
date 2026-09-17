@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.dach.sagiri.config.BotProperties;
 import com.dach.sagiri.dedup.SeenArticleService;
-import com.dach.sagiri.news.model.NewsItem;
 
 /**
  * Summariser backed by an Ollama server running next to the bot — a local model,
@@ -49,7 +48,7 @@ public class OllamaSummarizer extends LlmSummarizer {
     }
 
     @Override
-    protected String generate(String prompt, NewsItem item) {
+    protected String generate(String prompt, String label) {
         try {
             HttpRequest request = HttpRequest.newBuilder(URI.create(generateUrl()))
                 .timeout(Duration.ofSeconds(settings.getTimeoutSeconds()))
@@ -69,7 +68,7 @@ public class OllamaSummarizer extends LlmSummarizer {
             }
             if (response.statusCode() != 200) {
                 logger.warn("Ollama returned {} for '{}': {}", response.statusCode(),
-                    item.title(), StringUtils.abbreviate(response.body(), 200));
+                    label, StringUtils.abbreviate(response.body(), 200));
                 return "";
             }
             return readSummary(response.body());
@@ -81,7 +80,7 @@ public class OllamaSummarizer extends LlmSummarizer {
             Thread.currentThread().interrupt();
             return "";
         } catch (RuntimeException e) {
-            logger.warn("Ollama summarisation failed for '{}': {}", item.title(), e.toString());
+            logger.warn("Ollama summarisation failed for '{}': {}", label, e.toString());
             return "";
         }
     }

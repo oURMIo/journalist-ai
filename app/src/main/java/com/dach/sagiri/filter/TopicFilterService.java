@@ -51,10 +51,10 @@ public class TopicFilterService {
         List<TopicFilterEntity> rules =
             repository.findByTopicIdOrderByKindAscTermAsc(topic.getId());
         if (rules.isEmpty()) {
-            return TopicFilters.none(topic.getSlug());
+            return TopicFilters.none(topic.getSlug(), topic.getDomain());
         }
-        return new TopicFilters(topic.getSlug(), termsOf(rules, FilterKind.EXCLUDE),
-            termsOf(rules, FilterKind.INCLUDE));
+        return new TopicFilters(topic.getSlug(), topic.getDomain(),
+            termsOf(rules, FilterKind.EXCLUDE), termsOf(rules, FilterKind.INCLUDE));
     }
 
     @Transactional

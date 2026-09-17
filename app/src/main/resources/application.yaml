@@ -55,6 +55,7 @@ bot:
   topic-prefix: ${TOPIC_PREFIX:news-}
   bootstrap-topics: ${BOOTSTRAP_TOPICS:}
   welcome-pin: ${WELCOME_PIN:true}
+  topic-profile: ${TOPIC_PROFILE:true}
   send-rate-per-minute: ${SEND_RATE_PER_MINUTE:17}
   summarizer: ${SUMMARIZER:ollama}
   link-preview: ${LINK_PREVIEW:FIRST_ONLY}

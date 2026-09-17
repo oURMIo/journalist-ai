@@ -101,7 +101,7 @@ class FilterCommandTest {
         when(filters.add(topic, FilterKind.EXCLUDE, "go, crypto"))
             .thenReturn(new AddResult(List.of("go", "crypto"), false));
         when(filters.of(topic))
-            .thenReturn(new TopicFilters("it", List.of("go", "crypto"), List.of()));
+            .thenReturn(new TopicFilters("it", "", List.of("go", "crypto"), List.of()));
         when(ai.available()).thenReturn(true);
 
         command.execute(context("/exclude", "go,", "crypto"));
@@ -118,7 +118,7 @@ class FilterCommandTest {
         when(filters.add(topic, FilterKind.INCLUDE, "kubernetes"))
             .thenReturn(new AddResult(List.of("kubernetes"), false));
         when(filters.of(topic))
-            .thenReturn(new TopicFilters("it", List.of(), List.of("kubernetes")));
+            .thenReturn(new TopicFilters("it", "", List.of(), List.of("kubernetes")));
 
         command.execute(context("/include", "kubernetes"));
 
@@ -139,7 +139,7 @@ class FilterCommandTest {
 
     @Test
     void a_bare_filter_command_lists_the_rules() {
-        when(filters.of(topic)).thenReturn(new TopicFilters("it", List.of("go"), List.of()));
+        when(filters.of(topic)).thenReturn(new TopicFilters("it", "", List.of("go"), List.of()));
 
         command.execute(context("/filter"));
 
@@ -149,7 +149,7 @@ class FilterCommandTest {
 
     @Test
     void a_topic_without_rules_gets_the_usage_hint() {
-        when(filters.of(topic)).thenReturn(TopicFilters.none("it"));
+        when(filters.of(topic)).thenReturn(TopicFilters.none("it", ""));
 
         command.execute(context("/filter"));
 
@@ -159,7 +159,7 @@ class FilterCommandTest {
     @Test
     void remove_reaches_the_service_and_names_what_went() {
         when(filters.remove(topic, "go")).thenReturn(List.of("go"));
-        when(filters.of(topic)).thenReturn(TopicFilters.none("it"));
+        when(filters.of(topic)).thenReturn(TopicFilters.none("it", ""));
 
         command.execute(context("/filter", "remove", "go"));
 
@@ -180,7 +180,7 @@ class FilterCommandTest {
     void a_batch_that_hit_the_limit_says_so_even_when_part_of_it_landed() {
         when(filters.add(topic, FilterKind.EXCLUDE, "go, crypto, nft"))
             .thenReturn(new AddResult(List.of("go"), true));
-        when(filters.of(topic)).thenReturn(new TopicFilters("it", List.of("go"), List.of()));
+        when(filters.of(topic)).thenReturn(new TopicFilters("it", "", List.of("go"), List.of()));
 
         command.execute(context("/exclude", "go,", "crypto,", "nft"));
 

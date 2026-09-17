@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.dach.sagiri.config.BotProperties;
 import com.dach.sagiri.dedup.SeenArticleService;
-import com.dach.sagiri.news.model.NewsItem;
 
 /**
  * Hosted alternative to {@link OllamaSummarizer}, enabled with
@@ -36,7 +35,7 @@ public class AnthropicSummarizer extends LlmSummarizer {
     }
 
     @Override
-    protected String generate(String prompt, NewsItem item) {
+    protected String generate(String prompt, String label) {
         MessageCreateParams params = MessageCreateParams.builder()
             .model(settings.getModel())
             .maxTokens(settings.getMaxTokens())
@@ -53,7 +52,7 @@ public class AnthropicSummarizer extends LlmSummarizer {
                 .reduce("", (left, right) -> left + right)
                 .strip();
         } catch (RuntimeException e) {
-            logger.warn("Anthropic summarisation failed for '{}': {}", item.title(), e.toString());
+            logger.warn("Anthropic summarisation failed for '{}': {}", label, e.toString());
             return "";
         }
     }

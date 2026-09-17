@@ -49,6 +49,18 @@ public class MessageTemplates {
     private String filterCleared = "";
     private String filterKindExclude = "";
     private String filterKindInclude = "";
+    private String topicProfileDerived = "";
+    private String queryHeader = "";
+    private String queryFeeds = "";
+    private String queryDomainUnknown = "";
+    private String queryDomainDropped = "";
+    private String querySourceSlug = "";
+    private String querySourcePreset = "";
+    private String querySourceModel = "";
+    private String querySourceUser = "";
+    private String queryUsage = "";
+    private String querySet = "";
+    private String queryReset = "";
 
     /** Substitutes {@code {key}} placeholders; unknown placeholders are left untouched. */
     public static String render(String template, Map<String, ?> vars) {
@@ -340,5 +352,101 @@ public class MessageTemplates {
 
     public void setFilterKindInclude(String filterKindInclude) {
         this.filterKindInclude = filterKindInclude;
+    }
+
+    public String getTopicProfileDerived() {
+        return topicProfileDerived;
+    }
+
+    public void setTopicProfileDerived(String topicProfileDerived) {
+        this.topicProfileDerived = topicProfileDerived;
+    }
+
+    public String getQueryHeader() {
+        return queryHeader;
+    }
+
+    public void setQueryHeader(String queryHeader) {
+        this.queryHeader = queryHeader;
+    }
+
+    public String getQueryFeeds() {
+        return queryFeeds;
+    }
+
+    public void setQueryFeeds(String queryFeeds) {
+        this.queryFeeds = queryFeeds;
+    }
+
+    public String getQueryDomainUnknown() {
+        return queryDomainUnknown;
+    }
+
+    public void setQueryDomainUnknown(String queryDomainUnknown) {
+        this.queryDomainUnknown = queryDomainUnknown;
+    }
+
+    public String getQuerySourceSlug() {
+        return querySourceSlug;
+    }
+
+    public void setQuerySourceSlug(String querySourceSlug) {
+        this.querySourceSlug = querySourceSlug;
+    }
+
+    public String getQuerySourcePreset() {
+        return querySourcePreset;
+    }
+
+    public void setQuerySourcePreset(String querySourcePreset) {
+        this.querySourcePreset = querySourcePreset;
+    }
+
+    public String getQuerySourceModel() {
+        return querySourceModel;
+    }
+
+    public void setQuerySourceModel(String querySourceModel) {
+        this.querySourceModel = querySourceModel;
+    }
+
+    public String getQuerySourceUser() {
+        return querySourceUser;
+    }
+
+    public void setQuerySourceUser(String querySourceUser) {
+        this.querySourceUser = querySourceUser;
+    }
+
+    public String getQueryUsage() {
+        return queryUsage;
+    }
+
+    public void setQueryUsage(String queryUsage) {
+        this.queryUsage = queryUsage;
+    }
+
+    public String getQuerySet() {
+        return querySet;
+    }
+
+    public void setQuerySet(String querySet) {
+        this.querySet = querySet;
+    }
+
+    public String getQueryReset() {
+        return queryReset;
+    }
+
+    public void setQueryReset(String queryReset) {
+        this.queryReset = queryReset;
+    }
+
+    public String getQueryDomainDropped() {
+        return queryDomainDropped;
+    }
+
+    public void setQueryDomainDropped(String queryDomainDropped) {
+        this.queryDomainDropped = queryDomainDropped;
     }
 }

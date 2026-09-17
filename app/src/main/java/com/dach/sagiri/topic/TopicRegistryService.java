@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.dach.sagiri.news.model.TopicQuery;
 
 /**
  * The topic registry — the bot's own answer to the missing {@code getForumTopics}.
@@ -57,9 +56,9 @@ public class TopicRegistryService {
         }
 
         String slug = parsed.get();
-        TopicQuery query = queryResolver.resolve(slug);
         TopicEntity topic = existing.orElseGet(TopicEntity::new);
         boolean isNew = topic.getId() == null;
+        boolean subjectChanged = !slug.equals(topic.getSlug());
 
         if (isNew) {
             topic.setChatId(chatId);
@@ -68,7 +67,13 @@ public class TopicRegistryService {
         }
         topic.setRawName(rawName);
         topic.setSlug(slug);
-        topic.setQuery(query.query());
+        if (subjectChanged) {
+            // A rename to another subject invalidates the derived one; a rename that
+            // only changes the emoji must not throw away a query written by hand.
+            topic.setQuery(queryResolver.resolve(slug).query());
+            topic.setDomain(null);
+            topic.setProfileSource(TopicProfileSource.SLUG);
+        }
 
         if (conflictsWithOtherActiveTopic(chatId, slug, threadId)) {
             // The partial unique index allows only one active topic per subject.
@@ -81,7 +86,7 @@ public class TopicRegistryService {
 
         TopicEntity saved = repository.save(topic);
         logger.info("{} topic {} -> slug '{}' query '{}'", isNew ? "Registered" : "Updated",
-            threadId, slug, query.query());
+            threadId, slug, saved.getQuery());
         return Optional.of(saved);
     }
 

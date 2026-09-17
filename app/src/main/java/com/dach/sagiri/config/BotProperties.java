@@ -30,6 +30,9 @@ public class BotProperties {
     private String topicPrefix = "news-";
     private List<String> bootstrapTopics = List.of();
     private boolean welcomePin = true;
+
+    /** Let the model read an ambiguous topic name once and say what it is about. */
+    private boolean topicProfile = true;
     private int sendRatePerMinute = 17;
     private String summarizer = "extractive";
     private LinkPreview linkPreview = LinkPreview.FIRST_ONLY;
@@ -130,6 +133,14 @@ public class BotProperties {
 
     public void setBootstrapTopics(List<String> bootstrapTopics) {
         this.bootstrapTopics = bootstrapTopics;
+    }
+
+    public boolean isTopicProfile() {
+        return topicProfile;
+    }
+
+    public void setTopicProfile(boolean topicProfile) {
+        this.topicProfile = topicProfile;
     }
 
     public boolean isWelcomePin() {

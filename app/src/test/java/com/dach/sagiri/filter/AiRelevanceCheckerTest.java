@@ -16,7 +16,7 @@ class AiRelevanceCheckerTest {
         "https://example.com/go", "Example", Instant.now(), "<p>The Go team shipped it.</p>", null);
 
     private static final TopicFilters FILTERS =
-        new TopicFilters("it", List.of("go"), List.of("kubernetes"));
+        new TopicFilters("it", "", List.of("go"), List.of("kubernetes"));
 
     private static AiRelevanceChecker checker(String answer, AtomicReference<String> prompt) {
         return new AiRelevanceChecker((asked, item) -> {
@@ -78,6 +78,27 @@ class AiRelevanceCheckerTest {
             .contains("Go 1.24 lands generics tweaks")
             .contains("The Go team shipped it.")
             .doesNotContain("<p>");
+    }
+
+    @Test
+    void a_known_subject_is_spelled_out_so_the_model_knows_which_java_is_meant() {
+        AtomicReference<String> prompt = new AtomicReference<>();
+        TopicFilters java = TopicFilters.none("java", "the Java programming language and the JVM");
+
+        checker("ALLOW", prompt).check(ITEM, java);
+
+        assertThat(prompt.get())
+            .contains("That topic means: the Java programming language and the JVM")
+            .contains("about a different subject is unwanted");
+    }
+
+    @Test
+    void a_topic_with_no_known_subject_is_asked_about_exactly_as_before() {
+        AtomicReference<String> prompt = new AtomicReference<>();
+
+        checker("ALLOW", prompt).check(ITEM, FILTERS);
+
+        assertThat(prompt.get()).doesNotContain("That topic means");
     }
 
     @Test

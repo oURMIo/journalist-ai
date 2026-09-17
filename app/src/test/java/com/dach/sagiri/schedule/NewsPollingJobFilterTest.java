@@ -18,7 +18,7 @@ import com.dach.sagiri.telegram.MessageFormatter;
 import com.dach.sagiri.telegram.OutgoingMessage;
 import com.dach.sagiri.telegram.TelegramSender;
 import com.dach.sagiri.topic.TopicEntity;
-import com.dach.sagiri.topic.TopicQueryResolver;
+import com.dach.sagiri.topic.TopicProfileService;
 import com.dach.sagiri.topic.TopicRegistryService;
 import com.pengrad.telegrambot.response.SendResponse;
 
@@ -39,7 +39,7 @@ class NewsPollingJobFilterTest {
     private static final Gson GSON = new Gson();
 
     private final TopicRegistryService registry = mock(TopicRegistryService.class);
-    private final TopicQueryResolver queryResolver = mock(TopicQueryResolver.class);
+    private final TopicProfileService profiles = mock(TopicProfileService.class);
     private final NewsAggregator aggregator = mock(NewsAggregator.class);
     private final SeenArticleService seenArticles = mock(SeenArticleService.class);
     private final ArticleFilter articleFilter = mock(ArticleFilter.class);
@@ -48,7 +48,7 @@ class NewsPollingJobFilterTest {
     private final TelegramSender sender = mock(TelegramSender.class);
     private final BotProperties properties = new BotProperties();
 
-    private final NewsPollingJob job = new NewsPollingJob(registry, queryResolver, aggregator,
+    private final NewsPollingJob job = new NewsPollingJob(registry, profiles, aggregator,
         seenArticles, articleFilter, summarizer, formatter, sender, new PollingState(), properties);
 
     private final TopicEntity topic = topic();
@@ -73,8 +73,8 @@ class NewsPollingJobFilterTest {
     }
 
     private void feed(NewsItem... items) {
-        when(queryResolver.resolve("it")).thenReturn(new TopicQuery("it", "it", List.of(), false));
-        when(articleFilter.rulesOf(topic)).thenReturn(TopicFilters.none("it"));
+        when(profiles.queryFor(topic)).thenReturn(new TopicQuery("it", "it", List.of(), false));
+        when(articleFilter.rulesOf(topic)).thenReturn(TopicFilters.none("it", ""));
         when(aggregator.collect(any(), any(), anyInt())).thenReturn(List.of(items));
         when(seenArticles.filterUnseen(eq(7L), any())).thenReturn(List.of(items));
         when(formatter.format(any(), any())).thenReturn("<b>news</b>");

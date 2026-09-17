@@ -15,6 +15,10 @@ import com.dach.sagiri.topic.TopicEntity;
  * the keywords alone decide, and an article that broke no rule is published —
  * the filter narrows the feed, it never silences it.
  * <p>
+ * A topic whose domain is known is checked even when the reader typed no rule at
+ * all: the search engine answers the name of the topic, and only the domain says
+ * whether "Java" meant the language or the island.
+ * <p>
  * Only the model's own verdict is stored. A model that was merely unreachable
  * produces no verdict at all, and that article is postponed rather than dropped:
  * the cycle must not move its look-back past something it could not judge.
@@ -40,7 +44,7 @@ public class ArticleFilter {
     }
 
     public FilterDecision decide(TopicFilters rules, NewsItem item) {
-        if (rules.isEmpty()) {
+        if (rules.isEmpty() && !rules.hasDomain()) {
             return FilterDecision.allow();
         }
 

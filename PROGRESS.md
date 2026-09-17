@@ -84,16 +84,41 @@ Beyond `docs/SPEC.md`, see `DECISIONS.md` §14.
       could not judge and a send that failed are fetched again
 - [x] Filter checks capped at half the hourly LLM budget
 
+## Stage 9 — What a topic is about ✅
+
+Beyond `docs/SPEC.md`, see `DECISIONS.md` §15. Answers "my `news-java` topic
+gets volcano news".
+
+- [x] `topics.domain` + `topics.profile_source` (`V3`), `TopicProfile`
+- [x] `TopicProfiler` — one model call per topic turns the slug into the subject
+      behind it plus a query that excludes its namesakes
+- [x] Derived on the first poll, never on an incoming update, so no Telegram
+      update waits for a model — and topics created before this get a subject too
+- [x] Conditional write: the scheduler and a `/now` cannot store two profiles or
+      announce twice; a backend that answers nothing is not asked again for 15
+      minutes, while an answer in the wrong shape costs only that one topic
+- [x] Query priority `USER` > preset > `MODEL` > slug; feeds only from a preset
+- [x] The derived subject is announced once in the topic, with the query that
+      will really be used; `/query`, `/query <text>`, `/query auto` overrule it
+- [x] `/query <text>` drops the derived subject with it, so a misread topic
+      cannot keep blocking by meaning what the new query finds
+- [x] A hand-written query survives a rename that only changed the emoji; a
+      rename to another subject starts over
+- [x] The relevance check is given the subject, and now runs for a topic with a
+      known subject and no keyword rules at all
+- [x] No model, `TOPIC_PROFILE=false` or an unparsable answer leaves the topic
+      searching for its own name, exactly as before
+
 ## Tests
 
 | Run | Tests | Needs |
 |---|---|---|
-| `./gradlew test` | 146 | nothing — no network, no Docker |
-| `INTEGRATION_TESTS=true ./gradlew test` | 161 | one-time download of an embedded PostgreSQL |
+| `./gradlew test` | 184 | nothing — no network, no Docker |
+| `INTEGRATION_TESTS=true ./gradlew test` | 199 | one-time download of an embedded PostgreSQL |
 
 ## Verified here vs. not
 
-Verified by running it: the build, all 161 tests, the Flyway migration and
+Verified by running it: the build, all 199 tests, the Flyway migrations and
 Hibernate schema validation against a real PostgreSQL, both unique indexes
 (including the partial one), the de-duplication round trip, and a full Spring
 context boot with Telegram mocked.
