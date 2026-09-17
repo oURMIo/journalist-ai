@@ -30,5 +30,25 @@
 - If a requirement is ambiguous: stop, ask, record the assumption in
   `DECISIONS.md`.
 
+## Agents
+
+Two project subagents in `.claude/agents/`. Use them — do not hand-wave the
+steps they cover.
+
+- **test-engineer** — every new or changed behaviour ships unit tests through it:
+  JUnit 5 + AssertJ + **Mockito mocks for every collaborator**, no Spring
+  context, no network, no Docker, happy path + failure/fallback + boundary.
+  Also the agent to call when `./gradlew test` fails.
+- **code-reviewer** — runs on the diff **before anything is staged**, against the
+  invariants above (topic registry upserts, welcome-once claim, thread id,
+  `TelegramSender` as the only send path, `markSent`, summariser fallback,
+  immutable migrations, `messages.yml`, offline tests). Read-only; it reports,
+  you fix.
+
+Order for a code change: implement → test-engineer → `./gradlew build` →
+code-reviewer → update `PROGRESS.md` / `DECISIONS.md` → `git add` → propose the
+commit message.
+
 ### Rules:
 @.claude/rules/working.md
+@.claude/rules/workflow.md
