@@ -2,6 +2,7 @@ package com.dach.sagiri.telegram;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import com.dach.sagiri.config.BotProperties;
@@ -17,6 +18,9 @@ public class MessageFormatter {
     static final int MAX_TITLE = 200;
     static final int MAX_SUMMARY = 500;
 
+    /** Below this a recap that restates the headline has added nothing. */
+    static final int MIN_ADDED_CHARS = 20;
+
     private final DateTimeFormatter timestampFormat;
     private final ZoneId zone;
 
@@ -28,7 +32,8 @@ public class MessageFormatter {
 
     public String format(NewsItem item, String summary) {
         String title = HtmlText.escape(HtmlText.truncate(item.title(), MAX_TITLE));
-        String body = HtmlText.escape(HtmlText.truncate(summary, MAX_SUMMARY));
+        String body = HtmlText.escape(
+            HtmlText.truncate(recap(item.title(), summary), MAX_SUMMARY));
         String source = HtmlText.escape(StringUtils.defaultIfBlank(item.sourceName(), "unknown"));
         String published = timestampFormat.format(item.publishedAt());
 
@@ -42,6 +47,33 @@ public class MessageFormatter {
             .append("\">Read full article</a>");
 
         return HtmlText.fitMessage(html.toString());
+    }
+
+    /**
+     * A feed that offers no description leaves the summarisers with the headline
+     * alone, and the headline again under the headline is noise. A recap that
+     * opens with the headline and then goes on saying something is kept: that is
+     * what a fetched article context usually looks like.
+     */
+    static String recap(String title, String summary) {
+        String normalized = normalize(summary);
+        String headline = normalize(title);
+        if (normalized.isEmpty()) {
+            return "";
+        }
+        if (headline.isEmpty()) {
+            return summary;
+        }
+        boolean repeats = headline.startsWith(normalized)
+                          || (normalized.startsWith(headline)
+                              && normalized.length() - headline.length() < MIN_ADDED_CHARS);
+        return repeats ? "" : summary;
+    }
+
+    /** Letters and digits of any script: a Cyrillic headline must normalise too. */
+    private static String normalize(String text) {
+        return StringUtils.trimToEmpty(text).toLowerCase(Locale.ROOT)
+            .replaceAll("[^\\p{L}\\p{N}]+", " ").strip();
     }
 
     ZoneId zone() {

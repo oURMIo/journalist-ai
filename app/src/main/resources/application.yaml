@@ -70,6 +70,11 @@ bot:
     retries: ${HTTP_RETRIES:2}
     max-parallel-feeds: ${HTTP_MAX_PARALLEL_FEEDS:8}
     user-agent: ${HTTP_USER_AGENT:JournalistNewsBot/1.0 (+https://github.com/journalist-news-bot)}
+  google-news-decode-links: ${GOOGLE_NEWS_DECODE:true}
+  article-context:
+    enabled: ${ARTICLE_CONTEXT:true}
+    min-description-chars: ${ARTICLE_CONTEXT_MIN_DESCRIPTION_CHARS:200}
+    max-chars: ${ARTICLE_CONTEXT_MAX_CHARS:1500}
   ollama:
     base-url: ${OLLAMA_BASE_URL:http://ollama:11434}
     model: ${OLLAMA_MODEL:llama3.2:3b}

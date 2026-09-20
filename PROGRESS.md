@@ -115,21 +115,56 @@ gets volcano news".
 - [x] No model, `TOPIC_PROFILE=false` or an unparsable answer leaves the topic
       searching for its own name, exactly as before
 
+## Stage 10 — A summary even when the feed says nothing ✅
+
+Beyond `docs/SPEC.md`, see `DECISIONS.md` §19. Answers "the recap under the
+headline reads *I don't have any information about the news item*".
+
+- [x] `ArticleContextFetcher` — one request to the article page when the cleaned
+      feed description is under `ARTICLE_CONTEXT_MIN_DESCRIPTION_CHARS`, taking
+      `og:description` and the opening paragraphs, capped at
+      `ARTICLE_CONTEXT_MAX_CHARS`; never the whole article, never stored
+- [x] The prompt carries `Source:` and `Article:`, and no longer invites the model
+      to explain that the input was insufficient
+- [x] A refusal or an answer under 25 characters counts as a failed call: the
+      extractive summariser answers instead, and nothing is written to
+      `summary_cache`
+- [x] That fallback is built from the fetched context, so a topic reads as news
+      even when the model is unreachable
+- [x] Nothing extra is fetched for `SUMMARIZER=extractive`, for a filtered-out
+      article, or with `ARTICLE_CONTEXT=false`
+- [x] `ExtractiveSummarizer.plainText` parses instead of stripping, so two feed
+      paragraphs no longer merge into "...opened.It employs..." and the sentence
+      split sees the boundary
+- [x] A Google News stub is decoded to the publisher URL (`DECISIONS.md` §20), so
+      the link opens the article and the fetcher has something to read; a failed
+      decode still publishes the stub
+- [x] The link-stub description of a Google News item is dropped, and a recap
+      that repeats its own headline is never published — while one that restates
+      the headline and then says something is kept
+- [x] A decode that failed is not cached, and `GOOGLE_NEWS_DECODE=false` turns the
+      whole path off for a host Google starts rate-limiting
+
 ## Tests
 
 | Run | Tests | Needs |
 |---|---|---|
-| `./gradlew test` | 216 | nothing — no network, no Docker |
-| `INTEGRATION_TESTS=true ./gradlew test` | 231 | one-time download of an embedded PostgreSQL |
+| `./gradlew test` | 273 | nothing — no network, no Docker |
+| `INTEGRATION_TESTS=true ./gradlew test` | 288 | one-time download of an embedded PostgreSQL |
 
 ## Verified here vs. not
 
-Verified by running it: the build, all 231 tests, the Flyway migrations and
-Hibernate schema validation against a real PostgreSQL, both unique indexes
-(including the partial one), the de-duplication round trip, and a full Spring
-context boot with Telegram mocked.
+Verified by running it: the build and the 273 offline tests. Earlier runs
+covered the Flyway migrations and Hibernate schema validation against a real
+PostgreSQL, both unique indexes (including the partial one), the de-duplication
+round trip, and a full Spring context boot with Telegram mocked.
 
-**Not verified:** `docker compose up -d`, the Ollama container with its model
-pull, and a live Telegram session — Docker was not running on the build machine.
-`docker compose config` validates the compose file, and the Ollama client is
-covered by tests against a stub server. See `DECISIONS.md` §13.
+**Not verified:** `INTEGRATION_TESTS=true ./gradlew test` was not re-run for
+stage 10 — it touched no repository and no migration. `docker compose up -d`,
+the Ollama container with its model pull, a live Telegram session, and the
+article pages of any real news site — the fetcher is covered by unit tests
+against HTML fixtures only. The Google News decoder was checked once by hand
+against the live endpoint (a `fool.com` stub decoded to the article) but no
+automated test touches Google. `docker compose config` validates the compose file,
+and the Ollama client is covered by tests against a stub server. See
+`DECISIONS.md` §13.

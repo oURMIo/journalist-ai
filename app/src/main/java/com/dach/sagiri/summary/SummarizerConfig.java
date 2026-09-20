@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.dach.sagiri.config.BotProperties;
 import com.dach.sagiri.dedup.SeenArticleService;
+import com.dach.sagiri.news.ArticleContextFetcher;
 
 /**
  * Picks the summariser from {@code SUMMARIZER}.
@@ -40,7 +41,8 @@ public class SummarizerConfig {
 
     @Bean
     public Summarizer summarizer(BotProperties properties, ExtractiveSummarizer extractive,
-        SummaryCacheRepository cache, SeenArticleService seenArticles, HttpClient newsHttpClient) {
+        SummaryCacheRepository cache, SeenArticleService seenArticles,
+        ArticleContextFetcher articles, HttpClient newsHttpClient) {
 
         String choice = StringUtils.lowerCase(StringUtils.trimToEmpty(properties.getSummarizer()),
             Locale.ROOT);
@@ -51,7 +53,7 @@ public class SummarizerConfig {
                 logger.info("Summaries come from Ollama: model {} at {}", settings.getModel(),
                     settings.getBaseUrl());
                 yield new OllamaSummarizer(newsHttpClient, extractive, cache, seenArticles,
-                    settings);
+                    articles, settings);
             }
             case ANTHROPIC, LLM_ALIAS -> {
                 BotProperties.Llm settings = properties.getLlm();
@@ -62,7 +64,7 @@ public class SummarizerConfig {
                 }
                 logger.info("Summaries come from Anthropic: model {}", settings.getModel());
                 yield new AnthropicSummarizer(anthropicClient(settings), extractive, cache,
-                    seenArticles, settings);
+                    seenArticles, articles, settings);
             }
             default -> {
                 logger.info("Summaries come from the extractive summariser");

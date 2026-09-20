@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.dach.sagiri.config.BotProperties;
 import com.dach.sagiri.dedup.SeenArticleService;
+import com.dach.sagiri.news.ArticleContextFetcher;
 
 /**
  * Summariser backed by an Ollama server running next to the bot — a local model,
@@ -35,9 +36,9 @@ public class OllamaSummarizer extends LlmSummarizer {
 
     public OllamaSummarizer(HttpClient client, ExtractiveSummarizer fallback,
         SummaryCacheRepository cache, SeenArticleService seenArticles,
-        BotProperties.Ollama settings) {
+        ArticleContextFetcher articles, BotProperties.Ollama settings) {
 
-        super(fallback, cache, seenArticles, settings.getMaxCallsPerHour());
+        super(fallback, cache, seenArticles, articles, settings.getMaxCallsPerHour());
         this.client = client;
         this.settings = settings;
     }

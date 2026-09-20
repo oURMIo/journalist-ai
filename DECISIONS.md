@@ -132,7 +132,9 @@ What changed:
 What deliberately did not change:
 
 - Only the headline and the feed description reach the model; the full article is
-  still never fetched (§11, and a legal risk).
+  still never fetched (§11, and a legal risk). Narrowed later by §19: when the
+  feed description is too thin to summarise, the page's own preview text and
+  opening paragraphs are read as well — still not the whole article.
 - Every backend still falls back to `ExtractiveSummarizer` on any failure, so the
   bot never goes silent. This matters more than before: on a first run the model
   pull takes minutes, and until it finishes the bot posts news using the feed
@@ -470,3 +472,111 @@ untouched.
 `QueryCommand` still accepts `авто` and `сброс` alongside `auto` and `reset`.
 Those are inputs, not output — keeping them costs nothing and does not break a
 reader who learned them before this change.
+
+## 19. A thin feed description is filled in from the article page, against spec §11
+
+Spec §11 says the summariser's input is *"заголовок + описание из фида (**не**
+качаем полный текст статьи — это отдельная задача и юридический риск)"*. In
+practice Google News — the fallback provider behind every topic without a preset
+— gives a description that is a link stub, so the prompt was effectively a bare
+headline and `llama3.2:3b` answered *"I don't have any information about the news
+item"*, which then went into the topic and into `summary_cache`. **The customer
+asked for the model to be given more context from the article in that case**, so
+the spec is overridden here on their instruction.
+
+What changed:
+
+- `ArticleContextFetcher` (package `com.dach.sagiri.news`, next to `HttpFetcher`)
+  reads the article page **once**, without retries, when the cleaned feed
+  description is shorter than `ARTICLE_CONTEXT_MIN_DESCRIPTION_CHARS` (200).
+- It takes `og:description` / `meta[name=description]` — the text every site
+  already hands to link previews — plus the opening paragraphs of
+  `article`/`main`/`[itemprop=articleBody]`, dropping lines under 80 characters
+  (captions, bylines, cookie notices), and caps the result at
+  `ARTICLE_CONTEXT_MAX_CHARS` (1500). This is the compromise the customer chose
+  over both "meta description only" and "the whole article text".
+- Nothing is fetched for a Google News link the provider could not resolve: the
+  stub serves Google's own interstitial, and its description is not the article's.
+  A body that declares more than 2 MB is dropped instead of buffered — a feed
+  link can point at a PDF or a video, and the polling thread is waiting.
+- The prompt gained `Source:` and `Article:` lines, and its last instruction
+  changed from *"If the input is insufficient, return the description as is"* —
+  which is what invited the refusals — to *"Never state that information is
+  missing … summarize the headline itself"*.
+- `LlmSummarizer.isNonAnswer` treats a refusal or an answer under 25 characters
+  exactly like a failed call: fall back to `ExtractiveSummarizer`, **do not
+  cache**. A non-answer that reached the cache used to be permanent.
+- The fetched context also feeds the fallback
+  (`ExtractiveSummarizer.summarize(text, title)`), so a topic gets real sentences
+  even when the model is unreachable.
+
+What deliberately did not change:
+
+- Nothing is fetched for `SUMMARIZER=extractive`: the fetcher hangs off
+  `LlmSummarizer`, not off the extractive path, so the model-free default stays
+  free of extra requests.
+- Nothing is fetched for an article that the filters dropped — `summarize` is
+  called at publish time only.
+- The article text is never stored; only the generated summary is cached, as
+  before.
+- `ARTICLE_CONTEXT=false` restores the §11 behaviour exactly.
+
+The per-cycle cost is at most one extra request per published article with a thin
+description (`MAX_ITEMS_PER_TOPIC=5` by default), taken with the existing
+`HTTP_TIMEOUT_SECONDS` and no retry, because a summary is worth one request and
+never a stalled polling cycle.
+
+## 20. Google News links are decoded, not followed
+
+`docs/SPEC.md` §10 treats a Google News item like any other: take the link, follow
+the redirect, publish it. That stopped being true. A
+`news.google.com/rss/articles/CBMi...` stub now answers **200 with an application
+shell that contains no link at all**, so `resolveFinalUrl` (a `HEAD` that reports
+where it landed) hands back the stub itself. Two things followed from that:
+
+- the reader's "Read full article" opened a Google interstitial rather than the
+  article;
+- §19's fetcher had nothing to read, so the recap fell back to the feed
+  description — and a Google News description is the headline and the source
+  wrapped in an `<a>`, nothing more. The message then repeated its own headline
+  as the summary, which is what the customer reported.
+
+`GoogleNewsLinkDecoder` therefore reads the stub page for the `data-n-a-ts` and
+`data-n-a-sg` values it carries and posts them to
+`/_/DotsSplashUi/data/batchexecute`, which is what Google News itself calls to
+open an article. The answer holds the publisher URL. Verified against the live
+endpoint while implementing this: a `fool.com` stub decoded to the article.
+
+This is an **undocumented endpoint and it will break some day**, so nothing
+depends on it: `decode` returns an empty `Optional` on any failure, the redirect
+is then followed exactly as before, and an item that cannot be resolved is still
+published with its stub link. The decoder also declines any URL without an
+`/articles/` segment, which keeps the older stub format on the redirect path.
+
+Two related changes fell out of the same report:
+
+- `GoogleNewsRssProvider` now clears `rawDescription` for its items. It is a link
+  stub, not content: keeping it only gave the extractive summariser the headline
+  to echo. With it gone, §19's fetcher reads the decoded article instead.
+- `MessageFormatter.recap` drops a summary that repeats the headline — unless it
+  goes on to add something, because a recap built from an article's own
+  `og:description` often opens with the headline and then carries the news. Belt
+  and braces: whatever a feed or a model does, the line under a headline is
+  either new information or nothing.
+
+The cost is honest about itself: two extra requests (the stub page, then the
+RPC) per Google News link the process has not decoded yet. `GoogleNewsRssProvider`
+normalises everything it fetched, which is `MAX_ITEMS_PER_TOPIC` times the
+aggregator's overfetch factor — twenty links for the default five messages — so a
+topic polled with nothing cached pays for twenty decodes to publish five. Both
+requests go through `HttpFetcher` with the configured timeout and no retries, the
+result is cached in the existing `resolvedLinks` map, and `GOOGLE_NEWS_DECODE=false`
+turns the whole thing off for a host that Google starts rate-limiting. Resolving
+links only for the items that survive de-duplication and the filters would cut
+that fourfold; it moves link resolution out of the provider and into the polling
+job, and is deliberately left as a separate change.
+
+**A failed decode is not cached.** Only a URL that actually left `news.google.com`
+is remembered: one 429 must not pin every link of that cycle to a stub for the
+life of the process.
+

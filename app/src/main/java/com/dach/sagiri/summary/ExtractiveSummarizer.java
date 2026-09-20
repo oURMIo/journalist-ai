@@ -5,9 +5,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.parser.Parser;
-import org.jsoup.safety.Safelist;
 import com.dach.sagiri.news.model.NewsItem;
 
 /**
@@ -26,10 +23,19 @@ public class ExtractiveSummarizer implements Summarizer {
 
     @Override
     public String summarize(NewsItem item) {
-        String text = plainText(item.rawDescription());
+        return summarize(item.rawDescription(), item.title());
+    }
+
+    /**
+     * @param source HTML or plain text to shorten — the feed description, or the
+     *     article context fetched for an item whose feed said nothing
+     * @param title  used when the source turns out to be empty
+     */
+    public String summarize(String source, String title) {
+        String text = plainText(source);
         if (StringUtils.isBlank(text)) {
-            // No description in the feed: the headline is all we honestly have.
-            return StringUtils.trimToEmpty(item.title());
+            // Nothing to shorten: the headline is all we honestly have.
+            return StringUtils.trimToEmpty(title);
         }
 
         List<String> sentences = new ArrayList<>();
@@ -55,13 +61,16 @@ public class ExtractiveSummarizer implements Summarizer {
             : summary.substring(0, MAX_LENGTH - 1).stripTrailing() + "…";
     }
 
-    /** Feed descriptions are HTML fragments; everything markup-ish has to go. */
+    /**
+     * Feed descriptions are HTML fragments; everything markup-ish has to go.
+     * Parsed rather than stripped: stripping glues block elements together
+     * ("...plant opened.It employs..."), and the sentence split would then see
+     * one long sentence where the feed had three.
+     */
     public static String plainText(String html) {
         if (StringUtils.isBlank(html)) {
             return "";
         }
-        String cleaned = Jsoup.clean(html, "", Safelist.none(),
-            new Document.OutputSettings().prettyPrint(false));
-        return Parser.unescapeEntities(cleaned, false).replaceAll("\\s+", " ").strip();
+        return Jsoup.parseBodyFragment(html).body().text().replaceAll("\\s+", " ").strip();
     }
 }

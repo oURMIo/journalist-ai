@@ -40,6 +40,7 @@ public class GoogleNewsRssProvider implements NewsProvider {
 
     private final HttpFetcher fetcher;
     private final FeedParser parser;
+    private final GoogleNewsLinkDecoder decoder;
     private final BotProperties properties;
 
     /** Resolving a redirect costs a request; the same stub often repeats across runs. */
@@ -49,9 +50,10 @@ public class GoogleNewsRssProvider implements NewsProvider {
     private static final int MAX_CACHED_LINKS = 2_000;
 
     public GoogleNewsRssProvider(HttpFetcher fetcher, FeedParser parser,
-        BotProperties properties) {
+        GoogleNewsLinkDecoder decoder, BotProperties properties) {
         this.fetcher = fetcher;
         this.parser = parser;
+        this.decoder = decoder;
         this.properties = properties;
     }
 
@@ -97,24 +99,37 @@ public class GoogleNewsRssProvider implements NewsProvider {
         }
 
         String url = resolveLink(item.url());
-        return new NewsItem(item.externalId(), title, url, source, item.publishedAt(),
-            item.rawDescription(), item.imageUrl());
+        // The description of a Google News item is the headline and the source
+        // over again, wrapped in a link: text, but nothing to summarise.
+        return new NewsItem(item.externalId(), title, url, source, item.publishedAt(), "",
+            item.imageUrl());
     }
 
     private String resolveLink(String url) {
         if (!StringUtils.contains(url, GOOGLE_HOST)) {
             return url;
         }
+        String cached = resolvedLinks.get(url);
+        if (cached != null) {
+            return cached;
+        }
+
+        // The decoder handles today's /rss/articles/ stubs and declines the rest,
+        // which still resolve by following the redirect.
+        String resolved = properties.isGoogleNewsDecodeLinks()
+            ? decoder.decode(url).orElseGet(() -> fetcher.resolveFinalUrl(url))
+            : fetcher.resolveFinalUrl(url);
+
+        if (resolved.contains(GOOGLE_HOST)) {
+            // Not cached: Google answering 429 once must not pin every link of the
+            // day to a stub. The item is still published, with the link it had.
+            logger.debug("Could not resolve Google News link {}", url);
+            return resolved;
+        }
         if (resolvedLinks.size() >= MAX_CACHED_LINKS) {
             resolvedLinks.clear();
         }
-        return resolvedLinks.computeIfAbsent(url, stub -> {
-            String resolved = fetcher.resolveFinalUrl(stub);
-            if (resolved.contains(GOOGLE_HOST)) {
-                // Google did not hand over the target; the stub still opens fine.
-                logger.debug("Could not resolve Google News link {}", stub);
-            }
-            return resolved;
-        });
+        resolvedLinks.put(url, resolved);
+        return resolved;
     }
 }

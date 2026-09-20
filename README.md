@@ -223,6 +223,15 @@ extractive.
 A preset improves quality; it is never a precondition. Add your own by editing
 `topic-presets.yml` and rebuilding.
 
+A Google News link is a redirect stub that no longer redirects, so the bot
+decodes it to the publisher's own URL before publishing — both so that "Read full
+article" opens the article and so that there is an article to summarise at all.
+If Google ever stops answering, the item is still published — with its stub link
+and, since a Google News description carries nothing but the headline, usually
+with no recap line under it (`DECISIONS.md` §20). Decoding costs two requests per
+link it has not seen yet, so `GOOGLE_NEWS_DECODE=false` turns it off if your host
+ever gets rate-limited.
+
 ---
 
 ## Summaries
@@ -236,11 +245,25 @@ The recap under each headline comes from one of three backends, chosen with
 | `anthropic` | hosted Claude, needs `LLM_API_KEY` | paid per article |
 | `extractive` | no model: the first sentences of the feed description | free |
 
-Whatever the choice, **only the headline and the feed description are sent to the
-model** — the full article is never fetched. Summaries are cached per article, so
-the same story is never summarised twice. Any failure, timeout or missing model
-falls back to the extractive path, so a slow or absent model never leaves a topic
-empty.
+Summaries are cached per article, so the same story is never summarised twice.
+Any failure, timeout or missing model falls back to the extractive path, so a
+slow or absent model never leaves a topic empty — and an answer that is not a
+summary at all ("I don't have any information about the news item") is treated
+as a failure: it is neither published nor cached.
+
+### When the feed says nothing
+
+Google News and several RSS feeds hand over a headline and a link stub instead
+of a description, and a model asked about nothing answers that it knows nothing.
+A summary that only repeats the headline is never published: the line under a
+headline is either new information or nothing.
+
+With `ARTICLE_CONTEXT=true` (the default) a feed description shorter than
+`ARTICLE_CONTEXT_MIN_DESCRIPTION_CHARS` makes the bot read the article page once
+and take its preview text (`og:description`) plus the opening paragraphs, capped
+at `ARTICLE_CONTEXT_MAX_CHARS`, as the input for the recap. The article is never
+mirrored or stored, only summarised; set `ARTICLE_CONTEXT=false` to send the
+headline and the feed description alone.
 
 The default model is `llama3.2:3b`, chosen to fit the 3 GB limit set on the
 container in `docker-compose.yml`. To use another one, set `OLLAMA_MODEL` in
@@ -284,6 +307,10 @@ All settings come from the environment; defaults live in `application.yaml`.
 | `FILTER_AI_CHECK` | no | `true` | let the model judge an article by meaning, not only by word |
 | `FILTER_MAX_TERMS_PER_TOPIC` | no | `30` | how many filter terms one topic may hold |
 | `SUMMARIZER` | no | `ollama` | `ollama` \| `anthropic` \| `extractive` |
+| `GOOGLE_NEWS_DECODE` | no | `true` | decode a Google News stub to the publisher URL |
+| `ARTICLE_CONTEXT` | no | `true` | read the article page when the feed description is too thin to summarise |
+| `ARTICLE_CONTEXT_MIN_DESCRIPTION_CHARS` | no | `200` | a feed description shorter than this triggers that read |
+| `ARTICLE_CONTEXT_MAX_CHARS` | no | `1500` | upper bound on the text handed to the model |
 | `OLLAMA_MODEL` | no | `llama3.2:3b` | model pulled into the ollama container |
 | `OLLAMA_BASE_URL` | no | `http://ollama:11434` | set by compose |
 | `OLLAMA_TIMEOUT_SECONDS` | no | `120` | how long one summary may take |

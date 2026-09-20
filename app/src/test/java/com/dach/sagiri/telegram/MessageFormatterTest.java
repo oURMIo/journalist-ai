@@ -85,6 +85,87 @@ class MessageFormatterTest {
     }
 
     @Test
+    void omits_a_summary_that_only_repeats_the_headline() {
+        String title = "Buying This Hidden Software Stock Could Set You Up for Life";
+        String html = formatter.format(
+            item(title, "https://www.fool.com/investing/story", "The Motley Fool"), title);
+
+        assertThat(html).startsWith("🗞 <b>" + title + "</b>\n\n🕒");
+    }
+
+    @Test
+    void omits_a_summary_that_is_the_headline_plus_the_source() {
+        String title = "Buying This Hidden Software Stock Could Set You Up for Life";
+        String html = formatter.format(
+            item(title, "https://www.fool.com/investing/story", "The Motley Fool"),
+            title + " The Motley Fool");
+
+        assertThat(html).startsWith("🗞 <b>" + title + "</b>\n\n🕒");
+    }
+
+    @Test
+    void keeps_a_recap_that_opens_with_the_headline_and_then_says_something() {
+        String title = "Chipmaker unveils a 2nm process";
+        String html = formatter.format(
+            item(title, "https://example.com/a", "Example"),
+            title + " The company said production starts next year in Dresden.");
+
+        // What a fetched article context looks like: og:description repeats the
+        // headline and the first paragraph carries the news.
+        assertThat(html).contains("production starts next year in Dresden");
+    }
+
+    @Test
+    void drops_a_recap_that_adds_less_than_the_minimum() {
+        String title = "Chipmaker unveils a 2nm process";
+
+        assertThat(formatter.format(item(title, "https://example.com/a", "Example"),
+            title + " in Dresden today"))
+            .as("17 added characters is padding")
+            .startsWith("🗞 <b>" + title + "</b>\n\n🕒");
+        assertThat(formatter.format(item(title, "https://example.com/a", "Example"),
+            title + " in Dresden next year."))
+            .as("21 added characters is news")
+            .contains("in Dresden next year.");
+    }
+
+    @Test
+    void a_cyrillic_headline_does_not_silence_a_cyrillic_summary() {
+        String html = formatter.format(
+            item("Чипмейкер представил 2-нм техпроцесс", "https://example.com/a", "Пример"),
+            "Компания заявила, что производство начнётся в следующем году.");
+
+        assertThat(html).contains("Компания заявила, что производство начнётся в следующем году.");
+    }
+
+    @Test
+    void a_cyrillic_summary_equal_to_the_headline_is_still_dropped() {
+        String title = "Чипмейкер представил 2-нм техпроцесс";
+        String html = formatter.format(
+            item(title, "https://example.com/a", "Пример"), title.toUpperCase());
+
+        assertThat(html).startsWith("🗞 <b>" + title + "</b>\n\n🕒");
+    }
+
+    @Test
+    void keeps_a_summary_that_says_something_the_headline_does_not() {
+        String html = formatter.format(
+            item("Chipmaker unveils a 2nm process", "https://example.com/a", "Example"),
+            "The company said production starts next year in Dresden.");
+
+        assertThat(html).contains("The company said production starts next year in Dresden.");
+    }
+
+    @Test
+    void case_and_punctuation_do_not_hide_the_repetition() {
+        String html = formatter.format(
+            item("Chipmaker unveils a 2nm process!", "https://example.com/a", "Example"),
+            "chipmaker   unveils, a 2nm process");
+
+        assertThat(html).startsWith("🗞 <b>Chipmaker unveils a 2nm process!</b>\n\n🕒");
+    }
+
+    @Test
     void names_an_unknown_source_rather_than_leaving_a_gap() {
         String html = formatter.format(item("Title", "https://example.com/a", ""), "Summary");
 

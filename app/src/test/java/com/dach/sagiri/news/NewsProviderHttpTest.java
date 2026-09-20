@@ -10,18 +10,30 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import com.dach.sagiri.config.BotProperties;
+import com.dach.sagiri.news.googlenews.GoogleNewsLinkDecoder;
 import com.dach.sagiri.news.googlenews.GoogleNewsRssProvider;
 import com.dach.sagiri.news.model.NewsItem;
 import com.dach.sagiri.news.model.TopicQuery;
 import com.dach.sagiri.news.rss.FeedParser;
 import com.dach.sagiri.news.rss.RssNewsProvider;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * Providers against a loopback JDK http server: nothing leaves the machine, but
@@ -38,6 +50,9 @@ class NewsProviderHttpTest {
     private BotProperties properties;
     private HttpFetcher fetcher;
     private final FeedParser parser = new FeedParser();
+    /** Decoding a stub is a network call of its own: mocked, never made. */
+    private final GoogleNewsLinkDecoder decoder = mock(GoogleNewsLinkDecoder.class);
+    private final AtomicInteger pageErrorHits = new AtomicInteger();
 
     @BeforeEach
     void startServer() throws IOException {
@@ -48,6 +63,16 @@ class NewsProviderHttpTest {
         server.createContext("/malformed", feedHandler("broken.xml"));
         server.createContext("/rss/search", feedHandler("google-news-sample.xml"));
         server.createContext("/broken", exchange -> respond(exchange, 500, new byte[0]));
+        server.createContext("/page", exchange -> respond(exchange, 200,
+            "<html><body><p>The plant opened.</p></body></html>".getBytes(UTF_8)));
+        server.createContext("/huge", NewsProviderHttpTest::respondOversized);
+        server.createContext("/rpc", exchange ->
+            respond(exchange, 200, exchange.getRequestBody().readAllBytes()));
+        server.createContext("/rpc-error", exchange -> respond(exchange, 500, new byte[0]));
+        server.createContext("/page-error", exchange -> {
+            pageErrorHits.incrementAndGet();
+            respond(exchange, 500, new byte[0]);
+        });
         server.createContext("/slow", exchange -> {
             sleep();
             respond(exchange, 200, new byte[0]);
@@ -61,6 +86,7 @@ class NewsProviderHttpTest {
         properties.setGoogleNewsBaseUrl(baseUrl + "/rss/search");
 
         fetcher = new HttpFetcher(newHttpClient(), properties);
+        when(decoder.decode(anyString())).thenReturn(Optional.empty());
     }
 
     @AfterEach
@@ -87,6 +113,21 @@ class NewsProviderHttpTest {
         if (body.length > 0) {
             try (OutputStream out = exchange.getResponseBody()) {
                 out.write(body);
+            }
+        }
+        exchange.close();
+    }
+
+    /** Announces more than the 2 MB cap and actually sends it, so the cap is what decides. */
+    private static void respondOversized(HttpExchange exchange) throws IOException {
+        byte[] chunk = new byte[64 * 1024];
+        java.util.Arrays.fill(chunk, (byte) 'x');
+        long declared = 2L * 1024 * 1024 + chunk.length;
+        exchange.getResponseHeaders().add("Content-Type", "text/html");
+        exchange.sendResponseHeaders(200, declared);
+        try (OutputStream out = exchange.getResponseBody()) {
+            for (long written = 0; written < declared; written += chunk.length) {
+                out.write(chunk);
             }
         }
         exchange.close();
@@ -161,6 +202,33 @@ class NewsProviderHttpTest {
     }
 
     @Test
+    void an_article_page_is_fetched_as_bytes() {
+        assertThat(fetcher.getPage(baseUrl + "/page"))
+            .get()
+            .asInstanceOf(InstanceOfAssertFactories.BYTE_ARRAY)
+            .asString(UTF_8)
+            .contains("The plant opened.");
+    }
+
+    @Test
+    void an_oversized_article_page_is_not_buffered() {
+        assertThat(fetcher.getPage(baseUrl + "/huge"))
+            .as("the response is read, its body is dropped")
+            .contains(new byte[0]);
+    }
+
+    @Test
+    void a_failing_article_page_is_not_retried() {
+        assertThat(fetcher.getPage(baseUrl + "/page-error")).isEmpty();
+        assertThat(pageErrorHits).hasValue(1);
+    }
+
+    @Test
+    void a_malformed_article_url_yields_nothing_instead_of_an_exception() {
+        assertThat(fetcher.getPage("not a url")).isEmpty();
+    }
+
+    @Test
     void malformed_xml_yields_no_items() {
         RssNewsProvider provider = new RssNewsProvider(fetcher, parser, properties);
 
@@ -173,7 +241,7 @@ class NewsProviderHttpTest {
     @Test
     void google_news_provider_serves_a_topic_with_no_preset() {
         GoogleNewsRssProvider provider = new GoogleNewsRssProvider(
-            fetcherResolvingTo("https://bioworld.example/gene"), parser, properties);
+            fetcherResolvingTo("https://bioworld.example/gene"), parser, decoder, properties);
         TopicQuery query = new TopicQuery("biotech", "biotech", List.of(), false);
 
         assertThat(provider.supports(query)).isTrue();
@@ -186,11 +254,95 @@ class NewsProviderHttpTest {
             assertThat(item.sourceName()).isEqualTo("BioWorld");
             assertThat(item.url()).isEqualTo("https://bioworld.example/gene");
         });
+        verify(decoder).decode(GOOGLE_STUB);
+    }
+
+    @Test
+    void a_decoded_stub_wins_over_following_the_redirect() {
+        when(decoder.decode(GOOGLE_STUB))
+            .thenReturn(Optional.of("https://www.fool.com/investing/story"));
+        GoogleNewsRssProvider provider = new GoogleNewsRssProvider(
+            fetcherResolvingTo("https://news.google.com/rss/articles/unresolved"), parser,
+            decoder, properties);
+
+        List<NewsItem> items = provider.fetch(
+            new TopicQuery("biotech", "biotech", List.of(), false), SINCE, 10);
+
+        assertThat(items).singleElement().extracting(NewsItem::url)
+            .isEqualTo("https://www.fool.com/investing/story");
+    }
+
+    @Test
+    void the_same_stub_is_decoded_only_once() {
+        when(decoder.decode(GOOGLE_STUB))
+            .thenReturn(Optional.of("https://www.fool.com/investing/story"));
+        GoogleNewsRssProvider provider = new GoogleNewsRssProvider(fetcher, parser, decoder,
+            properties);
+        TopicQuery query = new TopicQuery("biotech", "biotech", List.of(), false);
+
+        provider.fetch(query, SINCE, 10);
+        provider.fetch(query, SINCE, 10);
+
+        verify(decoder, times(1)).decode(GOOGLE_STUB);
+    }
+
+    @Test
+    void a_stub_that_could_not_be_resolved_is_not_cached() {
+        GoogleNewsRssProvider provider = new GoogleNewsRssProvider(
+            fetcherResolvingTo(null), parser, decoder, properties);
+        TopicQuery query = new TopicQuery("biotech", "biotech", List.of(), false);
+
+        provider.fetch(query, SINCE, 10);
+        provider.fetch(query, SINCE, 10);
+
+        // One bad afternoon at Google must not pin the link to a stub for the
+        // rest of the process.
+        verify(decoder, times(2)).decode(GOOGLE_STUB);
+    }
+
+    @Test
+    void the_decoder_can_be_switched_off() {
+        properties.setGoogleNewsDecodeLinks(false);
+        GoogleNewsRssProvider provider = new GoogleNewsRssProvider(
+            fetcherResolvingTo("https://bioworld.example/gene"), parser, decoder, properties);
+
+        List<NewsItem> items = provider.fetch(
+            new TopicQuery("biotech", "biotech", List.of(), false), SINCE, 10);
+
+        assertThat(items).singleElement().extracting(NewsItem::url)
+            .isEqualTo("https://bioworld.example/gene");
+        verifyNoInteractions(decoder);
+    }
+
+    @Test
+    void a_form_post_hands_back_what_the_server_answered() {
+        assertThat(fetcher.postForm(baseUrl + "/rpc", "f.req=%5B%5D"))
+            .contains("f.req=%5B%5D");
+    }
+
+    @Test
+    void a_failing_form_post_yields_nothing_instead_of_an_exception() {
+        assertThat(fetcher.postForm(baseUrl + "/rpc-error", "f.req=%5B%5D")).isEmpty();
+    }
+
+    @Test
+    void a_google_news_item_carries_no_description_to_summarise() {
+        GoogleNewsRssProvider provider = new GoogleNewsRssProvider(
+            fetcherResolvingTo("https://bioworld.example/gene"), parser, decoder, properties);
+
+        List<NewsItem> items = provider.fetch(
+            new TopicQuery("biotech", "biotech", List.of(), false), SINCE, 10);
+
+        // The feed description is the headline and the source in an <a>: nothing
+        // to summarise, and printing it back would echo the title.
+        assertThat(items).singleElement().extracting(NewsItem::rawDescription)
+            .isEqualTo("");
     }
 
     @Test
     void google_news_search_url_carries_the_english_locale() {
-        GoogleNewsRssProvider provider = new GoogleNewsRssProvider(fetcher, parser, properties);
+        GoogleNewsRssProvider provider = new GoogleNewsRssProvider(fetcher, parser, decoder,
+            properties);
 
         assertThat(provider.searchUrl("ai safety"))
             .contains("q=ai+safety")
@@ -201,7 +353,7 @@ class NewsProviderHttpTest {
     @Test
     void an_unresolvable_google_link_is_sent_as_is_rather_than_failing() {
         GoogleNewsRssProvider provider = new GoogleNewsRssProvider(
-            fetcherResolvingTo(null), parser, properties);
+            fetcherResolvingTo(null), parser, decoder, properties);
 
         List<NewsItem> items = provider.fetch(
             new TopicQuery("biotech", "biotech", List.of(), false), SINCE, 10);

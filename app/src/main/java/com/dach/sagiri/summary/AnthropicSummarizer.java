@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.dach.sagiri.config.BotProperties;
 import com.dach.sagiri.dedup.SeenArticleService;
+import com.dach.sagiri.news.ArticleContextFetcher;
 
 /**
  * Hosted alternative to {@link OllamaSummarizer}, enabled with
@@ -22,9 +23,9 @@ public class AnthropicSummarizer extends LlmSummarizer {
 
     public AnthropicSummarizer(AnthropicClient client, ExtractiveSummarizer fallback,
         SummaryCacheRepository cache, SeenArticleService seenArticles,
-        BotProperties.Llm settings) {
+        ArticleContextFetcher articles, BotProperties.Llm settings) {
 
-        super(fallback, cache, seenArticles, settings.getMaxCallsPerHour());
+        super(fallback, cache, seenArticles, articles, settings.getMaxCallsPerHour());
         this.client = client;
         this.settings = settings;
     }

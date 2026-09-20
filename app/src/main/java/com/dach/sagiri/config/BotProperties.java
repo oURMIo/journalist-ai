@@ -40,10 +40,13 @@ public class BotProperties {
     private int seenRetentionDays = 30;
     private int shutdownDrainSeconds = 20;
     private String googleNewsBaseUrl = "https://news.google.com/rss/search";
+    /** Turn a Google News stub into the publisher's own URL; see DECISIONS.md 20. */
+    private boolean googleNewsDecodeLinks = true;
     private Http http = new Http();
     private Filter filter = new Filter();
     private Llm llm = new Llm();
     private Ollama ollama = new Ollama();
+    private ArticleContext articleContext = new ArticleContext();
 
     /** No ADMIN_USER_IDS configured means every member of an allowed chat is an admin. */
     public boolean isAdmin(Long userId) {
@@ -207,6 +210,14 @@ public class BotProperties {
         this.googleNewsBaseUrl = googleNewsBaseUrl;
     }
 
+    public boolean isGoogleNewsDecodeLinks() {
+        return googleNewsDecodeLinks;
+    }
+
+    public void setGoogleNewsDecodeLinks(boolean googleNewsDecodeLinks) {
+        this.googleNewsDecodeLinks = googleNewsDecodeLinks;
+    }
+
     public Filter getFilter() {
         return filter;
     }
@@ -237,6 +248,14 @@ public class BotProperties {
 
     public void setOllama(Ollama ollama) {
         this.ollama = ollama;
+    }
+
+    public ArticleContext getArticleContext() {
+        return articleContext;
+    }
+
+    public void setArticleContext(ArticleContext articleContext) {
+        this.articleContext = articleContext;
     }
 
     /** Per-topic news filters, edited at runtime with {@code /filter}. */
@@ -425,6 +444,45 @@ public class BotProperties {
 
         public void setMaxCallsPerHour(int maxCallsPerHour) {
             this.maxCallsPerHour = maxCallsPerHour;
+        }
+    }
+
+    /**
+     * Extra context for the summariser when a feed hands over a headline and
+     * little else — Google News descriptions are link stubs, and a model asked
+     * about nothing answers that it knows nothing. Only the page's own preview
+     * text and its leading paragraphs are read, never the whole article
+     * (a deliberate deviation from {@code docs/SPEC.md} §11, see DECISIONS.md).
+     */
+    public static class ArticleContext {
+
+        private boolean enabled = true;
+        /** Feed descriptions shorter than this are considered too thin to summarise. */
+        private int minDescriptionChars = 200;
+        private int maxChars = 1500;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getMinDescriptionChars() {
+            return minDescriptionChars;
+        }
+
+        public void setMinDescriptionChars(int minDescriptionChars) {
+            this.minDescriptionChars = minDescriptionChars;
+        }
+
+        public int getMaxChars() {
+            return maxChars;
+        }
+
+        public void setMaxChars(int maxChars) {
+            this.maxChars = maxChars;
         }
     }
 }
