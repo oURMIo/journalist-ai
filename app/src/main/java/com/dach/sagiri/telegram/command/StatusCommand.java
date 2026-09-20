@@ -38,20 +38,20 @@ public class StatusCommand implements BotCommand {
             .filter(topic -> topic.getChatId() == context.chatId())
             .toList();
 
-        StringBuilder out = new StringBuilder("<b>状态 / Status</b>\n")
-            .append("Активных топиков: ").append(topics.size()).append('\n')
-            .append("Интервал опроса: ").append(properties.getPollIntervalMinutes())
-            .append(" мин\n")
-            .append("Последний успешный опрос: ")
-            .append(state.lastSuccessfulPoll().map(Instant::toString).orElse("ещё не было"))
+        StringBuilder out = new StringBuilder("<b>Status</b>\n")
+            .append("Active topics: ").append(topics.size()).append('\n')
+            .append("Poll interval: ").append(properties.getPollIntervalMinutes())
+            .append(" min\n")
+            .append("Last successful poll: ")
+            .append(state.lastSuccessfulPoll().map(Instant::toString).orElse("none yet"))
             .append('\n')
-            .append("Циклов: ").append(state.runs())
-            .append(", отправлено новостей: ").append(state.messagesSent()).append('\n')
-            .append("Очередь отправки: ").append(sender.queueSize()).append('\n');
+            .append("Runs: ").append(state.runs())
+            .append(", news sent: ").append(state.messagesSent()).append('\n')
+            .append("Send queue: ").append(sender.queueSize()).append('\n');
 
         for (TopicEntity topic : topics) {
             out.append("• <code>").append(HtmlText.escape(topic.getSlug())).append("</code> — ")
-                .append(topic.getLastPolledAt() == null ? "ещё не опрашивался"
+                .append(topic.getLastPolledAt() == null ? "not polled yet"
                     : topic.getLastPolledAt().toString())
                 .append('\n');
         }

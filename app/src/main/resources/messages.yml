@@ -4,111 +4,111 @@ messages:
   welcome: |
     📌 <b>News topic: {slug}</b>
 
-    Этот топик автоматически наполняется новостями по теме «<b>{slug}</b>».
+    This topic is filled automatically with news about "<b>{slug}</b>".
 
-    • Источники: {sources}
-    • Язык новостей: English
-    • Интервал обновления: каждые {interval} мин
-    • Не более {maxItems} новостей за раз
+    • Sources: {sources}
+    • News language: English
+    • Refresh interval: every {interval} min
+    • At most {maxItems} news items at a time
 
-    Формат каждой публикации: заголовок, краткий пересказ, дата и время (UTC), ссылка на оригинал.
+    Each post contains: headline, short summary, date and time (UTC), link to the original.
 
-    Чтобы завести ещё одну тему — создайте топик с именем <code>{prefix}&lt;тема&gt;</code>
-    или отправьте команду <code>/newtopic &lt;тема&gt;</code>.
-  sources-fallback: "поиск по всем англоязычным источникам"
-  sources-more: "и ещё {count}"
+    To start another topic — create a forum topic named <code>{prefix}&lt;topic&gt;</code>
+    or send the command <code>/newtopic &lt;topic&gt;</code>.
+  sources-fallback: "search across all English-language sources"
+  sources-more: "and {count} more"
   help: |
     🗞 <b>Journalist — news bot</b>
 
-    Я публикую свежие англоязычные новости в топики, имя которых начинается с <code>{prefix}</code>.
-    Создайте топик <code>{prefix}biotech</code> — и я начну слать туда новости про биотех.
+    I post fresh English-language news into topics whose name starts with <code>{prefix}</code>.
+    Create a topic <code>{prefix}biotech</code> — and I will start sending biotech news there.
 
-    <b>Команды</b>
-    /help — эта справка
-    /newtopic &lt;тема&gt; — создать новостной топик
-    /newtopics &lt;т1&gt; &lt;т2&gt; … — создать несколько топиков
-    /presets — доступные пресеты тематик
-    /bind [имя] — привязать текущий топик (для топиков, созданных до бота)
-    /unbind — отвязать текущий топик
-    /renametopic &lt;тема&gt; — переименовать текущий топик
-    /closetopic — закрыть текущий топик
-    /filter — фильтры новостей этого топика
-    /exclude &lt;слова&gt; — не присылать новости про это
-    /include &lt;слова&gt; — присылать только про это
-    /query — что и где я ищу по этой теме, и как это поправить
-    /topics — реестр топиков
-    /status — состояние опроса
-    /now — внеочередной опрос текущего топика
-  not-admin: "Команда доступна только администраторам бота."
-  not-in-topic: "Эту команду нужно отправлять внутри новостного топика."
-  bind-usage: "Укажите имя топика: <code>/bind {prefix}&lt;тема&gt;</code> — отправьте это сообщение внутри нужного топика."
-  bind-not-news: "Имя <code>{name}</code> не начинается с <code>{prefix}</code> — такой топик я не отслеживаю."
-  bind-ok: "Топик привязан: <b>{name}</b> (тема: <code>{slug}</code>)."
-  unbind-ok: "Топик отвязан, новости сюда больше не приходят."
-  unbind-unknown: "Этот топик не числится в реестре."
-  newtopic-usage: "Укажите тему: <code>/newtopic biotech</code>"
-  newtopics-usage: "Укажите темы через пробел: <code>/newtopics it science ai</code>"
-  rename-usage: "Укажите новую тему: <code>/renametopic ai-safety</code>"
-  now-started: "Запускаю внеочередной опрос темы <code>{slug}</code>…"
-  now-done: "Опрос темы <code>{slug}</code> завершён: отправлено новостей — {sent}."
-  topics-empty: "Реестр топиков пуст."
-  presets-header: "<b>Доступные пресеты тематик</b>"
-  presets-fallback-note: "Тема без пресета тоже работает — через поиск Google News."
-  closetopic-ok: "Закрываю топик."
+    <b>Commands</b>
+    /help — this help
+    /newtopic &lt;topic&gt; — create a news topic
+    /newtopics &lt;t1&gt; &lt;t2&gt; … — create several topics
+    /presets — available topic presets
+    /bind [name] — bind the current topic (for topics created before the bot)
+    /unbind — unbind the current topic
+    /renametopic &lt;topic&gt; — rename the current topic
+    /closetopic — close the current topic
+    /filter — news filters of this topic
+    /exclude &lt;words&gt; — do not send news about this
+    /include &lt;words&gt; — send only news about this
+    /query — what and where I search for this topic, and how to change it
+    /topics — topic registry
+    /status — polling state
+    /now — poll the current topic right now
+  not-admin: "This command is available to bot administrators only."
+  not-in-topic: "Send this command inside a news topic."
+  bind-usage: "Specify the topic name: <code>/bind {prefix}&lt;topic&gt;</code> — send this message inside the topic you mean."
+  bind-not-news: "The name <code>{name}</code> does not start with <code>{prefix}</code> — I do not track such a topic."
+  bind-ok: "Topic bound: <b>{name}</b> (subject: <code>{slug}</code>)."
+  unbind-ok: "Topic unbound, news will no longer be posted here."
+  unbind-unknown: "This topic is not in the registry."
+  newtopic-usage: "Specify the topic: <code>/newtopic biotech</code>"
+  newtopics-usage: "Specify the topics separated by spaces: <code>/newtopics it science ai</code>"
+  rename-usage: "Specify the new topic: <code>/renametopic ai-safety</code>"
+  now-started: "Polling topic <code>{slug}</code> right now…"
+  now-done: "Polling of topic <code>{slug}</code> finished: news sent — {sent}."
+  topics-empty: "The topic registry is empty."
+  presets-header: "<b>Available topic presets</b>"
+  presets-fallback-note: "A topic without a preset works too — via Google News search."
+  closetopic-ok: "Closing the topic."
   filter-usage: |
-    <b>Фильтры новостей</b>
-    <code>/filter</code> — показать фильтры этого топика
-    <code>/exclude go, крипта</code> — не присылать новости про это
-    <code>/include kubernetes</code> — присылать только про это
-    <code>/filter remove go</code> — снять фильтр
-    <code>/filter clear</code> — снять все фильтры
+    <b>News filters</b>
+    <code>/filter</code> — show the filters of this topic
+    <code>/exclude go, crypto</code> — do not send news about this
+    <code>/include kubernetes</code> — send only news about this
+    <code>/filter remove go</code> — drop a filter
+    <code>/filter clear</code> — drop all filters
 
-    Термины разделяются запятыми; фраза пишется целиком: <code>/exclude machine learning</code>
-  filter-header: "<b>Фильтры топика {slug}</b>"
-  filter-empty: "У топика <code>{slug}</code> фильтров нет — приходят все новости по теме."
-  filter-exclude-label: "🚫 Не присылать:"
-  filter-include-label: "✅ Только про:"
-  filter-ai-on: "🤖 ИИ дополнительно отсеивает статьи по смыслу, а не только по точному слову."
-  filter-ai-off: "🤖 Проверка ИИ выключена — сравниваю только по точному слову."
-  filter-added: "Фильтр обновлён ({kind}): {terms}"
-  filter-nothing-added: "Ничего не добавил: такие фильтры уже есть."
-  filter-limit: "Достигнут лимит в {max} фильтров на топик, лишнее не добавил."
-  filter-removed: "Фильтр снят: {terms}"
-  filter-not-found: "Такого фильтра у топика нет: {terms}"
-  filter-cleared: "Снял все фильтры топика: {count}."
-  filter-kind-exclude: "не присылать"
-  filter-kind-include: "только про"
+    Terms are separated by commas; a phrase is written in full: <code>/exclude machine learning</code>
+  filter-header: "<b>Filters of topic {slug}</b>"
+  filter-empty: "Topic <code>{slug}</code> has no filters — all news on the subject comes through."
+  filter-exclude-label: "🚫 Do not send:"
+  filter-include-label: "✅ Only about:"
+  filter-ai-on: "🤖 AI additionally filters articles by meaning, not only by exact word match."
+  filter-ai-off: "🤖 AI check is off — I compare by exact word match only."
+  filter-added: "Filter updated ({kind}): {terms}"
+  filter-nothing-added: "Nothing added: such filters already exist."
+  filter-limit: "Reached the limit of {max} filters per topic, the rest was not added."
+  filter-removed: "Filter dropped: {terms}"
+  filter-not-found: "The topic has no such filter: {terms}"
+  filter-cleared: "Dropped all filters of the topic: {count}."
+  filter-kind-exclude: "do not send"
+  filter-kind-include: "only about"
   topic-profile-derived: |
-    🎯 <b>Тема «{slug}»</b> — определил область интересов
+    🎯 <b>Topic "{slug}"</b> — subject area detected
 
-    Это про: {domain}
-    Ищу по запросу: <code>{query}</code>
+    This is about: {domain}
+    Search query: <code>{query}</code>
 
-    Если тема понята неверно — задайте запрос сами: <code>/query &lt;слова&gt;</code>
+    If the topic was understood wrong — set the query yourself: <code>/query &lt;words&gt;</code>
   query-header: |
-    🔎 <b>Тема «{slug}»</b>
+    🔎 <b>Topic "{slug}"</b>
 
-    Это про: {domain}
-    Ищу по запросу: <code>{query}</code>
-    Запрос взят: {source}
-  query-feeds: "Плюс курируемых лент: {count}"
-  query-domain-unknown: "пока не определено — определю при следующем опросе"
-  query-domain-dropped: "не используется — запрос задан вручную; вернуть: <code>/query auto</code>"
-  query-source-slug: "из имени топика"
-  query-source-preset: "из пресета тематики"
-  query-source-model: "определён ИИ по имени топика"
-  query-source-user: "задан вручную"
+    This is about: {domain}
+    Search query: <code>{query}</code>
+    Query taken: {source}
+  query-feeds: "Plus curated feeds: {count}"
+  query-domain-unknown: "not determined yet — I will determine it on the next poll"
+  query-domain-dropped: "not used — the query is set manually; to bring it back: <code>/query auto</code>"
+  query-source-slug: "from the topic name"
+  query-source-preset: "from the topic preset"
+  query-source-model: "determined by AI from the topic name"
+  query-source-user: "set manually"
   query-usage: |
-    <b>Поисковый запрос топика</b>
-    <code>/query</code> — показать, что и где я ищу
-    <code>/query "java programming" OR jvm OR jdk</code> — искать именно это
-    <code>/query auto</code> — вернуть автоопределение темы
+    <b>Search query of the topic</b>
+    <code>/query</code> — show what and where I search
+    <code>/query "java programming" OR jvm OR jdk</code> — search exactly this
+    <code>/query auto</code> — restore automatic topic detection
 
-    Работает синтаксис Google News: <code>OR</code>, кавычки для фразы, <code>-слово</code> — исключить.
-    Свой запрос отменяет и определение темы: дальше фильтрую только по вашим словам.
+    Google News syntax works: <code>OR</code>, quotes for a phrase, <code>-word</code> — to exclude.
+    Your own query also cancels topic detection: from then on I filter by your words only.
   query-set: |
-    Запрос обновлён: <code>{query}</code>
+    Query updated: <code>{query}</code>
 
-    Проверить сразу — <code>/now</code>.
+    Check it right away — <code>/now</code>.
   query-reset: |
-    Вернул автоопределение темы. Определю её заново при следующем опросе — или сразу через <code>/now</code>.
+    Restored automatic topic detection. I will determine it again on the next poll — or right now via <code>/now</code>.

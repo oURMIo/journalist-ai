@@ -39,12 +39,12 @@ public class TopicsCommand implements BotCommand {
             return;
         }
 
-        StringBuilder out = new StringBuilder("<b>Реестр топиков</b>\n");
+        StringBuilder out = new StringBuilder("<b>Topic registry</b>\n");
         for (TopicEntity topic : topics) {
             out.append(marker(topic))
                 .append(" <code>").append(HtmlText.escape(topic.getSlug())).append("</code>")
                 .append(" — thread ").append(topic.getThreadId())
-                .append(topic.isCreatedByBot() ? " (создан ботом)" : "")
+                .append(topic.isCreatedByBot() ? " (created by the bot)" : "")
                 .append('\n');
         }
         sender.reply(context.chatId(), context.threadId(), out.toString().strip());

@@ -418,11 +418,11 @@ Consequences worth knowing:
 
 - A closed topic keeps `active = true`, so it keeps its subject under the partial
   unique index `(chat_id, slug) WHERE active`. `/newtopic it` while `news-it` is
-  closed answers "тема уже существует" instead of creating a second topic with
-  the same name, and `BOOTSTRAP_TOPICS` no longer recreates a closed topic on
-  every restart — which it did, because a closed topic used to be inactive and
-  therefore invisible to the duplicate check. Reopening the topic is what brings
-  the news back.
+  closed answers "Topic 'it' already exists." instead of creating a second
+  topic with the same name, and `BOOTSTRAP_TOPICS` no longer recreates a
+  closed topic on every restart — which it did, because a closed topic used
+  to be inactive and therefore invisible to the duplicate check. Reopening
+  the topic is what brings the news back.
 - `/closetopic` records the flag even when `closeForumTopic` itself came back
   not-ok. The reader asked for the news to stop; stopping it and leaving the
   topic open on Telegram's side is the harmless direction of that failure.
@@ -452,3 +452,21 @@ Verified with a BuildKit context probe against `./app`: `config.properties` is
 absent from the context, every input the build stage needs (`gradlew`,
 `settings.gradle`, `build.gradle`, `gradle/wrapper/*`, the rest of `src`) is
 present.
+
+## 18. All user-facing bot text is English
+
+`docs/SPEC.md` spells out the welcome message, the `/help` listing and several
+command replies in Russian. The bot publishes English-language news only, and
+the reader of a news topic is reading English anyway, so the interface text now
+matches the content: `messages.yml` and the remaining literals in
+`StatusCommand`, `TopicsCommand` and `DefaultTopicProvisioningService` are
+English. This supersedes the Russian samples in `docs/SPEC.md` — they stay as a
+record of the original wording, not as the text to restore.
+
+Nothing else changed: every `messages.yml` key, its placeholders and its HTML
+markup are the same, so the rendering and the `MessageTemplates` binding are
+untouched.
+
+`QueryCommand` still accepts `авто` and `сброс` alongside `auto` and `reset`.
+Those are inputs, not output — keeping them costs nothing and does not break a
+reader who learned them before this change.

@@ -51,15 +51,15 @@ public class DefaultTopicProvisioningService implements TopicProvisioningService
         String slug = slugParser.normalizeRequestedSlug(rawSlug);
         if (!slugParser.isProvisionable(slug)) {
             return ProvisionResult.invalidSlug(rawSlug,
-                "Недопустимая тема «" + rawSlug + "»: разрешены латиница, цифры и дефис, "
-                + "длина 2–100 символов.");
+                "Invalid topic '" + rawSlug + "': letters, digits and hyphen are allowed, "
+                + "length 2–100 characters.");
         }
 
         Optional<TopicEntity> existing = registry.findActiveBySlug(chatId, slug);
         if (existing.isPresent()) {
             // Telegram happily creates topics with duplicate names, so this check is ours.
             return ProvisionResult.alreadyExists(slug, existing.get().getThreadId(),
-                "Тема «" + slug + "» уже существует.");
+                "Topic '" + slug + "' already exists.");
         }
 
         String name = properties.topicName(slug);
@@ -71,7 +71,7 @@ public class DefaultTopicProvisioningService implements TopicProvisioningService
                 logger.warn("createForumTopic failed for '{}': {} {}", name,
                     response.errorCode(), response.description());
                 return ProvisionResult.failed(slug,
-                    "Не удалось создать «" + name + "»: " + response.description());
+                    "Could not create '" + name + "': " + response.description());
             }
 
             ForumTopic forumTopic = response.forumTopic();
@@ -81,15 +81,15 @@ public class DefaultTopicProvisioningService implements TopicProvisioningService
             Optional<TopicEntity> stored = registry.register(chatId, threadId, name, true);
             if (stored.isEmpty()) {
                 return ProvisionResult.failed(slug,
-                    "Топик создан, но не попал в реестр: " + name);
+                    "Topic created, but it did not reach the registry: " + name);
             }
             welcomeService.ensureWelcome(stored.get());
             logger.info("Provisioned topic '{}' as thread {}", name, threadId);
-            return ProvisionResult.created(slug, threadId, "Создана тема «" + slug + "».");
+            return ProvisionResult.created(slug, threadId, "Created topic '" + slug + "'.");
         } catch (RuntimeException e) {
             logger.error("Failed to provision topic '{}'", name, e);
             return ProvisionResult.failed(slug,
-                "Не удалось создать «" + name + "»: " + e.getMessage());
+                "Could not create '" + name + "': " + e.getMessage());
         }
     }
 
@@ -110,13 +110,13 @@ public class DefaultTopicProvisioningService implements TopicProvisioningService
         String slug = slugParser.normalizeRequestedSlug(rawSlug);
         if (!slugParser.isProvisionable(slug)) {
             return ProvisionResult.invalidSlug(rawSlug,
-                "Недопустимая тема «" + rawSlug + "».");
+                "Invalid topic '" + rawSlug + "'.");
         }
         Optional<TopicEntity> conflict = registry.findActiveBySlug(chatId, slug)
             .filter(topic -> topic.getThreadId() != threadId);
         if (conflict.isPresent()) {
             return ProvisionResult.alreadyExists(slug, conflict.get().getThreadId(),
-                "Тема «" + slug + "» уже занята другим топиком.");
+                "Topic '" + slug + "' is already taken by another topic.");
         }
 
         String name = properties.topicName(slug);
@@ -124,15 +124,15 @@ public class DefaultTopicProvisioningService implements TopicProvisioningService
             new EditForumTopic(chatId, threadId).name(name));
         if (!response.isOk()) {
             return ProvisionResult.failed(slug,
-                "Не удалось переименовать: " + response.description());
+                "Could not rename: " + response.description());
         }
 
         Optional<TopicEntity> stored = registry.rename(chatId, threadId, name);
         if (stored.isEmpty()) {
-            return ProvisionResult.failed(slug, "Топик переименован, но не попал в реестр.");
+            return ProvisionResult.failed(slug, "Topic renamed, but it did not reach the registry.");
         }
         welcomeService.refreshWelcome(stored.get());
-        return ProvisionResult.created(slug, threadId, "Тема изменена на «" + slug + "».");
+        return ProvisionResult.created(slug, threadId, "Topic changed to '" + slug + "'.");
     }
 
     @Override
