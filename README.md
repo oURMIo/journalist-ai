@@ -354,6 +354,23 @@ com.dach.sagiri
 `docs/SPEC.md` is the full specification, `DECISIONS.md` records where the
 implementation departs from it and why, `PROGRESS.md` tracks the stages.
 
+### Continuous integration
+
+Three workflows run on every push and pull request, on every branch:
+
+| Workflow | File | What it runs |
+|---|---|---|
+| Gradle Build | `.github/workflows/gradle-build.yml` | `./gradlew clean build -x test` in `app/`; on `master` it keeps the boot jar as an artifact |
+| Gradle Test | `.github/workflows/gradle-test.yml` | `./gradlew clean test` offline, uploads the test and JaCoCo reports |
+| Docker | `.github/workflows/docker.yml` | `docker compose config` against a `.env` seeded from `.env.example`, plus a build of the bot image |
+
+Integration tests stay out of CI: they are opt-in behind `INTEGRATION_TESTS=true`.
+Each workflow runs with `contents: read` only, and a branch with an open pull
+request builds once rather than twice.
+
+`.github/dependabot.yml` opens weekly update PRs for the Gradle dependencies in
+`/app`, the GitHub Actions and the `Dockerfile` base images.
+
 ---
 
 ## Troubleshooting
