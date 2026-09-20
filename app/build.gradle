@@ -44,7 +44,7 @@ dependencies {
 
   // --- News / parsing ---
   implementation("com.rometools:rome:2.1.0")
-  implementation("org.jsoup:jsoup:1.22.2")
+  implementation("org.jsoup:jsoup:1.23.2")
 
   // --- Misc ---
   implementation("javax.inject:javax.inject:1")
