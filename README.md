@@ -376,3 +376,7 @@ the 3 GB limit in `docker-compose.yml`. Raise it, or pick a smaller
   production token to a coding agent.
 - `app/src/main/resources/config.properties` is a git-ignored local-dev fallback
   for `bot.key`. If it holds a real token, revoke it via BotFather.
+- That file is also excluded from the Docker build context by `app/.dockerignore`,
+  so it never reaches the jar or the image. The compose build context is `./app`,
+  which is why that file - not the repository-root `.dockerignore` - is the one
+  that matters.

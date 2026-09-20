@@ -1,0 +1,14 @@
+.gradle
+build
+logs
+out
+*.iml
+
+.env
+*.env
+src/main/resources/config.properties
+src/main/resources/useful-url.json
+src/main/resources/project-list.json
+src/main/resources/users-list.json
+users-list.json
+admin-chat-id.txt

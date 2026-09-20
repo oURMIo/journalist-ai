@@ -434,3 +434,21 @@ Consequences worth knowing:
   closed = false`: it stays unpolled, which is the intended outcome, but a rename
   of that row would still revive it. Closing it once more writes the new flag and
   it is fixed for good.
+
+## 17. The build context is `./app`, so `.dockerignore` lives there
+
+`docker-compose.yml` builds the bot with `context: ./app`, and Docker reads
+`.dockerignore` from the root of the build context. The repository-root
+`.dockerignore` therefore never applied to that build: `COPY src ./src` pulled
+the git-ignored `app/src/main/resources/config.properties` (see [12](#12-configproperties-kept-as-a-local-dev-fallback))
+into the context, into `BOOT-INF/classes/config.properties` in the bootJar and
+into the image.
+
+`app/.dockerignore` is the file that governs this build; the root one is kept
+with depth-independent patterns (`**/config.properties`) only for a hypothetical
+root-context build. Do not consolidate the two back into one file at the root.
+
+Verified with a BuildKit context probe against `./app`: `config.properties` is
+absent from the context, every input the build stage needs (`gradlew`,
+`settings.gradle`, `build.gradle`, `gradle/wrapper/*`, the rest of `src`) is
+present.
