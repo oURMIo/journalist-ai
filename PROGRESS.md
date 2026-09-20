@@ -27,6 +27,12 @@ actually executed here, not just implemented — see the note at the bottom.
 - [x] `forum_topic_edited` with a null name does not wipe the stored name
 - [x] `TopicSlugParser` — emoji, case, `news_`, custom prefix, non-news names
 - [x] `/bind`, `/unbind`, `/topics`
+- [x] Telegram's open/closed state is its own column (`V4`), so a rename can no
+      longer put news back into a closed topic; `active` stays the answer to
+      "is this topic ours" (`DECISIONS.md` §16)
+- [x] A topic closed while its own batch is being published stops receiving it:
+      the flags are re-read per article, not taken from the cycle's snapshot
+- [x] `/topics` marks a closed topic 🔒, `/now` and `/status` skip it
 
 ## Stage 3a — Topic creation by the bot ✅
 
@@ -113,12 +119,12 @@ gets volcano news".
 
 | Run | Tests | Needs |
 |---|---|---|
-| `./gradlew test` | 184 | nothing — no network, no Docker |
-| `INTEGRATION_TESTS=true ./gradlew test` | 199 | one-time download of an embedded PostgreSQL |
+| `./gradlew test` | 216 | nothing — no network, no Docker |
+| `INTEGRATION_TESTS=true ./gradlew test` | 231 | one-time download of an embedded PostgreSQL |
 
 ## Verified here vs. not
 
-Verified by running it: the build, all 199 tests, the Flyway migrations and
+Verified by running it: the build, all 231 tests, the Flyway migrations and
 Hibernate schema validation against a real PostgreSQL, both unique indexes
 (including the partial one), the de-duplication round trip, and a full Spring
 context boot with Telegram mocked.

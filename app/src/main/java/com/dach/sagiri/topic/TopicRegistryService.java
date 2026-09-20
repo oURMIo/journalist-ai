@@ -3,6 +3,7 @@ package com.dach.sagiri.topic;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -102,20 +103,35 @@ public class TopicRegistryService {
         return register(chatId, threadId, rawName, false);
     }
 
+    /**
+     * Telegram's open/closed state, kept apart from {@code active}: {@code active}
+     * answers "is this topic ours", which a rename decides, and a rename must not
+     * put news back into a topic somebody closed.
+     */
+    @Transactional
+    public boolean setClosed(long chatId, long threadId, boolean closed) {
+        return update(chatId, threadId, topic -> topic.setClosed(closed));
+    }
+
     @Transactional
     public boolean setActive(long chatId, long threadId, boolean active) {
+        return update(chatId, threadId, topic -> topic.setActive(active));
+    }
+
+    private boolean update(long chatId, long threadId, Consumer<TopicEntity> change) {
         return repository.findByChatIdAndThreadId(chatId, threadId)
             .map(topic -> {
-                topic.setActive(active);
+                change.accept(topic);
                 repository.save(topic);
                 return true;
             })
             .orElse(false);
     }
 
+    /** The topics news may go into: ours to poll and open on Telegram's side. */
     @Transactional(readOnly = true)
-    public List<TopicEntity> activeTopics() {
-        return repository.findByActiveTrueOrderByChatIdAscThreadIdAsc();
+    public List<TopicEntity> pollableTopics() {
+        return repository.findByActiveTrueAndClosedFalseOrderByChatIdAscThreadIdAsc();
     }
 
     @Transactional(readOnly = true)
@@ -131,6 +147,15 @@ public class TopicRegistryService {
     @Transactional(readOnly = true)
     public Optional<TopicEntity> findActiveBySlug(long chatId, String slug) {
         return repository.findByChatIdAndSlugAndActiveTrue(chatId, slug);
+    }
+
+    /**
+     * Re-reads what the polling cycle started with: a cycle spans minutes and a
+     * topic closed in the middle of it must not receive the rest of the batch.
+     */
+    @Transactional(readOnly = true)
+    public boolean isPollable(Long topicId) {
+        return topicId != null && repository.existsByIdAndActiveTrueAndClosedFalse(topicId);
     }
 
     @Transactional

@@ -41,12 +41,20 @@ public class TopicsCommand implements BotCommand {
 
         StringBuilder out = new StringBuilder("<b>Реестр топиков</b>\n");
         for (TopicEntity topic : topics) {
-            out.append(topic.isActive() ? "🟢" : "⚪")
+            out.append(marker(topic))
                 .append(" <code>").append(HtmlText.escape(topic.getSlug())).append("</code>")
                 .append(" — thread ").append(topic.getThreadId())
                 .append(topic.isCreatedByBot() ? " (создан ботом)" : "")
                 .append('\n');
         }
         sender.reply(context.chatId(), context.threadId(), out.toString().strip());
+    }
+
+    /** 🔒 closed on Telegram, 🟢 polled, ⚪ known but not ours. */
+    private static String marker(TopicEntity topic) {
+        if (topic.isClosed()) {
+            return "🔒";
+        }
+        return topic.isActive() ? "🟢" : "⚪";
     }
 }

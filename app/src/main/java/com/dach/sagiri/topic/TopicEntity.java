@@ -56,6 +56,10 @@ public class TopicEntity {
     @Column(name = "active", nullable = false)
     private boolean active;
 
+    /** Telegram's own open/closed state, which a rename must never change. */
+    @Column(name = "closed", nullable = false)
+    private boolean closed;
+
     @Column(name = "created_by_bot", nullable = false)
     private boolean createdByBot;
 
@@ -159,6 +163,14 @@ public class TopicEntity {
         this.active = active;
     }
 
+    public boolean isClosed() {
+        return closed;
+    }
+
+    public void setClosed(boolean closed) {
+        this.closed = closed;
+    }
+
     public boolean isCreatedByBot() {
         return createdByBot;
     }
@@ -202,6 +214,6 @@ public class TopicEntity {
     @Override
     public String toString() {
         return "TopicEntity{id=" + id + ", chatId=" + chatId + ", threadId=" + threadId
-               + ", slug='" + slug + "', active=" + active + '}';
+               + ", slug='" + slug + "', active=" + active + ", closed=" + closed + '}';
     }
 }

@@ -3,6 +3,7 @@ package com.dach.sagiri.topic;
 import com.google.gson.Gson;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.request.BaseRequest;
+import com.pengrad.telegrambot.request.CloseForumTopic;
 import com.pengrad.telegrambot.request.CreateForumTopic;
 import com.pengrad.telegrambot.request.PinChatMessage;
 import com.pengrad.telegrambot.request.SendMessage;
@@ -145,6 +146,31 @@ class TopicProvisioningIdempotencyTest {
     }
 
     @Test
+    void closing_a_topic_marks_it_closed_without_dropping_it_from_the_registry() {
+        provisioning.provision(CHAT_ID, "biotech");
+
+        provisioning.close(CHAT_ID, THREAD_ID);
+
+        assertThat(bot.closedTopics()).hasSize(1);
+        TopicEntity row = store.rows().getFirst();
+        assertThat(row.isClosed()).isTrue();
+        assertThat(row.isActive())
+            .as("closed is Telegram's state; the topic stays ours")
+            .isTrue();
+    }
+
+    @Test
+    void a_closed_topic_that_gets_renamed_stays_closed() {
+        provisioning.provision(CHAT_ID, "biotech");
+        provisioning.close(CHAT_ID, THREAD_ID);
+
+        registry.register(CHAT_ID, THREAD_ID, "news-genomics", false);
+
+        assertThat(store.rows().getFirst().getSlug()).isEqualTo("genomics");
+        assertThat(store.rows().getFirst().isClosed()).isTrue();
+    }
+
+    @Test
     void icon_colour_is_deterministic_and_always_from_the_allowed_palette() {
         int first = DefaultTopicProvisioningService.iconColorFor("ai-safety");
         int again = DefaultTopicProvisioningService.iconColorFor("ai-safety");
@@ -173,6 +199,10 @@ class TopicProvisioningIdempotencyTest {
 
         List<BaseRequest<?, ?>> sentMessages() {
             return requests.stream().filter(SendMessage.class::isInstance).toList();
+        }
+
+        List<BaseRequest<?, ?>> closedTopics() {
+            return requests.stream().filter(CloseForumTopic.class::isInstance).toList();
         }
 
         @Override
@@ -259,8 +289,10 @@ class TopicProvisioningIdempotencyTest {
             });
 
             when(repository.markPolled(any(), any())).thenReturn(1);
-            when(repository.findByActiveTrueOrderByChatIdAscThreadIdAsc())
-                .thenAnswer(call -> byId.values().stream().filter(TopicEntity::isActive).toList());
+            when(repository.findByActiveTrueAndClosedFalseOrderByChatIdAscThreadIdAsc())
+                .thenAnswer(call -> byId.values().stream()
+                    .filter(topic -> topic.isActive() && !topic.isClosed())
+                    .toList());
         }
 
         TopicRepository repository() {

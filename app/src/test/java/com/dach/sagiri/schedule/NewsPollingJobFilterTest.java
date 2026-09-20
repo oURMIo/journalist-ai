@@ -73,6 +73,7 @@ class NewsPollingJobFilterTest {
     }
 
     private void feed(NewsItem... items) {
+        when(registry.isPollable(7L)).thenReturn(true);
         when(profiles.queryFor(topic)).thenReturn(new TopicQuery("it", "it", List.of(), false));
         when(articleFilter.rulesOf(topic)).thenReturn(TopicFilters.none("it", ""));
         when(aggregator.collect(any(), any(), anyInt())).thenReturn(List.of(items));

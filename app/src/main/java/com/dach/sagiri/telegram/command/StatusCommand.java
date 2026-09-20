@@ -34,7 +34,7 @@ public class StatusCommand implements BotCommand {
 
     @Override
     public void execute(CommandContext context) {
-        List<TopicEntity> topics = registry.activeTopics().stream()
+        List<TopicEntity> topics = registry.pollableTopics().stream()
             .filter(topic -> topic.getChatId() == context.chatId())
             .toList();
 

@@ -109,10 +109,10 @@ Every command is answered in the topic it was sent from.
 | `/bind [name]` | admin | inside a topic | attach a pre-existing topic |
 | `/unbind` | admin | inside a topic | stop polling this topic |
 | `/renametopic <subject>` | admin | inside a topic | rename and update the welcome |
-| `/closetopic` | admin | inside a topic | close it and deactivate it |
+| `/closetopic` | admin | inside a topic | close it; news stops until it is reopened |
 | `/status` | admin | anywhere | active topics, last poll, counters |
 | `/now` | admin | inside a topic | poll this topic immediately |
-| `/topics` | admin | anywhere | dump the registry |
+| `/topics` | admin | anywhere | dump the registry (🔒 closed, 🟢 polled, ⚪ not ours) |
 | `/filter` | admin | inside a topic | show the filters of this topic |
 | `/exclude <words>` | admin | inside a topic | never send news about these |
 | `/include <words>` | admin | inside a topic | send only news about these |

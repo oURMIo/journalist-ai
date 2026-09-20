@@ -17,9 +17,11 @@ public interface TopicRepository extends JpaRepository<TopicEntity, Long> {
 
     Optional<TopicEntity> findByChatIdAndSlugAndActiveTrue(long chatId, String slug);
 
-    List<TopicEntity> findByActiveTrueOrderByChatIdAscThreadIdAsc();
+    List<TopicEntity> findByActiveTrueAndClosedFalseOrderByChatIdAscThreadIdAsc();
 
     List<TopicEntity> findAllByOrderByChatIdAscThreadIdAsc();
+
+    boolean existsByIdAndActiveTrueAndClosedFalse(Long id);
 
     /**
      * Atomically takes ownership of sending the welcome message. Exactly one

@@ -37,7 +37,7 @@ public class NowCommand implements BotCommand {
             return;
         }
         registry.find(context.chatId(), context.threadId())
-            .filter(topic -> topic.isActive())
+            .filter(topic -> topic.isActive() && !topic.isClosed())
             .ifPresentOrElse(topic -> {
                 sender.reply(context.chatId(), context.threadId(),
                     MessageTemplates.render(messages.getNowStarted(),

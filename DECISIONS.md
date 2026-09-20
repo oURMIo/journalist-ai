@@ -368,3 +368,69 @@ it names are appended as `-term`, which both providers pass through. Rejecting a
 query for "not looking related enough to the slug" was considered and dropped: it
 would have thrown away good queries like `diplomacy OR geopolitics` for
 `foreign-policy`, and `/query` is the escape hatch that makes the guess safe.
+
+## 16. A closed topic stops receiving news
+
+### The cycle that is already running
+
+`docs/SPEC.md` §2 says a `forum_topic_closed` clears `active`, and it does — but
+`active` was only read once, when `NewsPollingJob.pollAll` took its list of
+topics. A cycle lives much longer than that snapshot: the send throttle paces one
+message per three seconds for the whole group, the relevance check is a model
+call per article, and a batch is up to `MAX_ITEMS_PER_TOPIC` items. A topic
+closed while its own batch was being published therefore kept receiving the rest
+of it.
+
+Telegram does not stop this on its own: a bot with `can_manage_topics` may post
+into a closed topic, so `sendMessage` returns `ok: true` and the messages land.
+
+`TopicRegistryService.isActive(topicId)` re-reads the flag, and `pollTopic` asks
+twice: once before it fetches anything, so a topic closed between the snapshot
+and its turn costs no feed request and no model call, and once per article,
+before the filters and the summariser run. The article that did not go out sets
+the same `unfinished` watermark a failed send sets, so `last_polled_at` does not
+move past it and a reopened topic resumes where it stopped instead of skipping
+the batch.
+
+What is deliberately not covered: the one message already handed to
+`TelegramSender` when the close arrives. The polling job publishes through
+`sendBlocking`, so at most a single news message can be in flight, and dropping
+it inside the sender would mean teaching the queue which messages are news — the
+`/closetopic` confirmation itself is sent into the topic that is being closed.
+
+### The open/closed state is its own column
+
+`docs/SPEC.md` §2 and §4 say a `forum_topic_closed` clears `active`, and that is
+what shipped — but `active` answers a different question. It means "is this topic
+ours to poll", and the thing that decides it is the name: `register()` sets it on
+every `forum_topic_created`, `forum_topic_edited` and `/bind`, unconditionally.
+So a topic that was closed and then renamed — a new emoji is enough — came back
+as active and started receiving news again, into a topic nobody had reopened.
+
+`V4__topic_closed.sql` therefore adds `topics.closed`, written only by
+`forum_topic_closed` / `forum_topic_reopened` and by `/closetopic`. `register()`
+keeps owning `active` alone and never touches it, so a rename can no longer
+reopen anything. The polling job asks for both: `pollableTopics()` and
+`isPollable(id)` mean active **and** open, which is also what `/status` counts
+and what `/now` requires.
+
+Consequences worth knowing:
+
+- A closed topic keeps `active = true`, so it keeps its subject under the partial
+  unique index `(chat_id, slug) WHERE active`. `/newtopic it` while `news-it` is
+  closed answers "тема уже существует" instead of creating a second topic with
+  the same name, and `BOOTSTRAP_TOPICS` no longer recreates a closed topic on
+  every restart — which it did, because a closed topic used to be inactive and
+  therefore invisible to the duplicate check. Reopening the topic is what brings
+  the news back.
+- `/closetopic` records the flag even when `closeForumTopic` itself came back
+  not-ok. The reader asked for the news to stop; stopping it and leaving the
+  topic open on Telegram's side is the harmless direction of that failure.
+- `/unbind` still clears `active`: "not mine any more" is exactly what that flag
+  is for, and it is not a statement about Telegram's own state.
+- `/topics` marks a closed topic 🔒, so the registry listing does not show it
+  green while nothing is being sent there.
+- No backfill. A topic closed before this migration is `active = false,
+  closed = false`: it stays unpolled, which is the intended outcome, but a rename
+  of that row would still revive it. Closing it once more writes the new flag and
+  it is fixed for good.

@@ -142,7 +142,7 @@ public class DefaultTopicProvisioningService implements TopicProvisioningService
             logger.warn("closeForumTopic failed for thread {}: {} {}", threadId,
                 response.errorCode(), response.description());
         }
-        registry.setActive(chatId, threadId, false);
+        registry.setClosed(chatId, threadId, true);
     }
 
     /**

@@ -113,7 +113,7 @@ public class UpdateHandler {
         if (message.forumTopicClosed() != null) {
             if (threadId != null) {
                 logger.info("forum_topic_closed chat={} thread={}", chatId, threadId);
-                registry.setActive(chatId, threadId, false);
+                registry.setClosed(chatId, threadId, true);
             }
             return true;
         }
@@ -121,7 +121,7 @@ public class UpdateHandler {
         if (message.forumTopicReopened() != null) {
             if (threadId != null) {
                 logger.info("forum_topic_reopened chat={} thread={}", chatId, threadId);
-                registry.setActive(chatId, threadId, true);
+                registry.setClosed(chatId, threadId, false);
             }
             return true;
         }

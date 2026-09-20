@@ -72,7 +72,7 @@ public class NewsPollingJob {
     @Scheduled(initialDelayString = "${bot.poll-initial-delay-minutes:1}",
         fixedDelayString = "${bot.poll-interval-minutes:30}", timeUnit = TimeUnit.MINUTES)
     public void pollAll() {
-        List<TopicEntity> topics = registry.activeTopics();
+        List<TopicEntity> topics = registry.pollableTopics();
         if (topics.isEmpty()) {
             logger.debug("No active topics to poll");
             state.recordSuccess(0);
@@ -99,6 +99,10 @@ public class NewsPollingJob {
      * @return how many news messages were actually delivered
      */
     public int pollTopic(TopicEntity topic) {
+        if (!registry.isPollable(topic.getId())) {
+            logger.debug("Topic '{}' is closed or no longer ours, skipping", topic.getSlug());
+            return 0;
+        }
         TopicQuery query = profiles.queryFor(topic);
         Instant since = lookbackStart(topic);
         int maxItems = properties.getMaxItemsPerTopic();
@@ -117,6 +121,14 @@ public class NewsPollingJob {
         Instant unfinished = null;
         for (NewsItem item : unseen) {
             if (sent >= maxItems || failures >= MAX_SEND_FAILURES) {
+                break;
+            }
+            if (!registry.isPollable(topic.getId())) {
+                // Telegram still accepts messages from a topic-managing bot into a
+                // closed topic, so a topic closed mid-cycle has to be caught here.
+                logger.info("Topic '{}' was closed mid-cycle, stopping after {} message(s)",
+                    topic.getSlug(), sent);
+                unfinished = earliest(unfinished, publishedAt(item, since));
                 break;
             }
             FilterDecision decision = articleFilter.decide(rules, item);
