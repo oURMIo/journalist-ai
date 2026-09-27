@@ -40,7 +40,7 @@ dependencies {
   runtimeOnly 'org.postgresql:postgresql'
 
   // --- Optional LLM summariser (SUMMARIZER=llm) ---
-  implementation("com.anthropic:anthropic-java:2.34.0")
+  implementation("com.anthropic:anthropic-java:2.65.0")
 
   // --- News / parsing ---
   implementation("com.rometools:rome:2.1.0")
