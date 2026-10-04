@@ -24,7 +24,7 @@ repositories {
 
 dependencies {
   // --- Telegram ---
-  implementation("com.github.pengrad:java-telegram-bot-api:10.1.0")
+  implementation("com.github.pengrad:java-telegram-bot-api:10.3.0")
 
   // --- Spring ---
   implementation 'org.springframework.boot:spring-boot-starter'
