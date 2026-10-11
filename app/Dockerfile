@@ -1,5 +1,5 @@
 # --- build ---
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
 # Dependency layer first: it changes far less often than the sources.
@@ -11,7 +11,7 @@ COPY src ./src
 RUN ./gradlew --no-daemon clean bootJar -x test
 
 # --- runtime ---
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
